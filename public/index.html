@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FluidType | AI Learning Engine</title>
+
+    <!-- Premium Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* ═══════════════════════════════════════════════════════════
+           PREMIUM DARK THEME PALETTE
+           ═══════════════════════════════════════════════════════════ */
+        :root {
+            --bg-base: #0B0F19;
+            --bg-surface: #151C2C;
+            --text-main: #F8FAFC;
+            --text-dim: #475569;
+            --error-color: #EF4444;
+            --error-bg: rgba(239, 68, 68, 0.2);
+            --accent: #06B6D4;
+            --accent-glow: rgba(6, 182, 212, 0.5);
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+        }
+
+        #typing-container {
+            font-family: 'Fira Code', monospace;
+            line-height: 1.6;
+            --line-height: calc(1.65rem * 2.2);
+            height: calc(3.5 * var(--line-height));
+            overflow-y: auto;
+            padding: 1.25rem;
+            border-radius: 16px;
+            background: rgba(21, 28, 44, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent) transparent;
+            scroll-behavior: smooth;
+        }
+        #typing-container::-webkit-scrollbar { width: 6px; }
+        #typing-container::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 3px;
+        }
+
+        .char {
+            white-space: pre;
+            border-radius: 4px;
+            transition: color 0.1s ease, background-color 0.1s ease;
+        }
+
+        .char.untyped { color: var(--text-dim); }
+        .char.correct {
+            color: var(--text-main);
+            text-shadow: 0 0 8px rgba(248, 250, 252, 0.2);
+        }
+        .char.incorrect {
+            color: var(--error-color);
+            background-color: var(--error-bg);
+        }
+
+        .caret {
+            border-left: 2px solid var(--accent);
+            box-shadow: -2px 0 8px var(--accent-glow);
+            animation: blink 1s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .caret-static {
+            border-left: 2px solid var(--accent);
+            box-shadow: -2px 0 8px var(--accent-glow);
+        }
+
+        @keyframes blink {
+            0%, 100% { border-color: transparent; box-shadow: none; }
+            50% { border-color: var(--accent); box-shadow: -2px 0 8px var(--accent-glow); }
+        }
+
+        .shake {
+            animation: shakeError 0.3s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shakeError {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+            40%, 60% { transform: translate3d(3px, 0, 0); }
+        }
+
+        #mobile-input-target {
+            position: absolute;
+            opacity: 0;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .glass-panel {
+            background: rgba(21, 28, 44, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #06B6D4, #8B5CF6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Diamond Button Animation */
+        .diamond-btn {
+            transform: rotate(45deg);
+            transition: all 0.3s ease;
+        }
+        .diamond-btn:hover {
+            transform: rotate(45deg) scale(1.1);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+        .diamond-icon {
+            transform: rotate(-45deg);
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           PASSWORD SCREEN
+           ═══════════════════════════════════════════════════════════ */
+        .password-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: var(--bg-base);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .password-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.95);
+        }
+        .password-input {
+            background: var(--bg-surface);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 16px 24px;
+            font-family: 'Fira Code', monospace;
+            font-size: 1.5rem;
+            color: var(--text-main);
+            text-align: center;
+            letter-spacing: 8px;
+            width: 200px;
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .password-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.15);
+        }
+        .password-input::placeholder {
+            letter-spacing: 4px;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+        .password-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            letter-spacing: 4px;
+            color: var(--accent);
+            text-transform: uppercase;
+        }
+        .password-error {
+            color: var(--error-color);
+            font-size: 0.85rem;
+            height: 20px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .password-error.show { opacity: 1; }
+
+        /* ═══════════════════════════════════════════════════════════
+           INIT SCREEN
+           ═══════════════════════════════════════════════════════════ */
+        .init-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 90;
+            background: var(--bg-base);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .init-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.95);
+        }
+        .init-btn {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            letter-spacing: 4px;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            background: transparent;
+            padding: 16px 48px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+        .init-btn:hover {
+            background: rgba(6, 182, 212, 0.1);
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
+            transform: scale(1.05);
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           CHATBOT STYLES
+           ═══════════════════════════════════════════════════════════ */
+        .chat-screen {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 16px;
+        }
+        .chat-screen.active { display: flex; }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 10px;
+        }
+        .chat-messages::-webkit-scrollbar { width: 4px; }
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 4px;
+        }
+
+        .msg-bubble {
+            max-width: 85%;
+            padding: 14px 18px;
+            border-radius: 14px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            animation: msgIn 0.3s ease-out;
+            word-break: break-word;
+        }
+        @keyframes msgIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .msg-user {
+            align-self: flex-end;
+            background: rgba(6, 182, 212, 0.12);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            color: var(--text-main);
+        }
+        .msg-ai {
+            align-self: flex-start;
+            background: var(--bg-surface);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .msg-ai:hover {
+            border-color: rgba(6, 182, 212, 0.3);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.08);
+        }
+        .msg-ai.tap-hint::after {
+            content: "tap to practice";
+            display: block;
+            font-size: 0.7rem;
+            color: var(--accent);
+            margin-top: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            opacity: 0.7;
+        }
+
+        .chat-input-wrap {
+            display: flex;
+            gap: 10px;
+            padding: 12px;
+            background: var(--bg-surface);
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .chat-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            padding: 8px 12px;
+        }
+        .chat-input::placeholder { color: var(--text-dim); }
+        .chat-send {
+            background: var(--accent);
+            color: var(--bg-base);
+            border: none;
+            border-radius: 12px;
+            padding: 10px 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .chat-send:hover {
+            box-shadow: 0 0 20px var(--accent-glow);
+            transform: scale(1.05);
+        }
+        .chat-send:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 6px;
+            padding: 14px 18px;
+            align-self: flex-start;
+        }
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: typingBounce 1.4s infinite ease-in-out both;
+        }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typingBounce {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.4; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           TYPING PRACTICE MODAL
+           ═══════════════════════════════════════════════════════════ */
+        .typing-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(11, 15, 25, 0.95);
+            backdrop-filter: blur(8px);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .typing-modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .typing-modal-content {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Start Typing Button (Top Left, circular blue glow) */
+        .start-typing-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 210;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: var(--bg-surface);
+            border: 2px solid var(--accent);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .start-typing-btn:hover {
+            box-shadow: 0 0 25px var(--accent-glow), 0 0 50px rgba(6, 182, 212, 0.15);
+            transform: scale(1.08);
+            background: rgba(6, 182, 212, 0.08);
+        }
+        .start-typing-btn.glowing {
+            animation: btnGlow 2s ease-in-out infinite alternate;
+        }
+        @keyframes btnGlow {
+            from { box-shadow: 0 0 10px var(--accent-glow); }
+            to { box-shadow: 0 0 30px var(--accent-glow), 0 0 60px rgba(6, 182, 212, 0.2); }
+        }
+
+        .close-modal-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 210;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--bg-surface);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.2rem;
+        }
+        .close-modal-btn:hover {
+            color: var(--error-color);
+            border-color: var(--error-color);
+        }
+
+        /* Thunder Canvas */
+        #thunder-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* Scanline Overlay (Zenitsu style subtle) */
+        .scanline {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(6,182,212,0.012) 2px, rgba(6,182,212,0.012) 4px);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 relative">
+
+    <!-- Ambient Background Glow -->
+    <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#06B6D4] opacity-[0.03] rounded-full blur-[100px] pointer-events-none"></div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         PASSWORD SCREEN (Password: 1911)
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="password-screen" id="password-screen">
+        <h1 class="text-3xl font-extrabold tracking-tight mb-4">
+            FLUID<span class="gradient-text">TYPE</span>
+        </h1>
+        <div class="password-label">Enter Access Code</div>
+        <input type="password" class="password-input" id="password-input" maxlength="6" placeholder="••••" autocomplete="off">
+        <div class="password-error" id="password-error">Access Denied</div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         INIT SCREEN
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="init-screen hidden" id="init-screen">
+        <h1 class="text-3xl font-extrabold tracking-tight">
+            FLUID<span class="gradient-text">TYPE</span>
+        </h1>
+        <p class="text-[#475569] text-sm max-w-md text-center leading-relaxed">
+            Initialize the AI Learning Engine. Engage the chatbot to generate topics, then practice typing with thunder-powered precision.
+        </p>
+        <button class="init-btn" id="init-btn">INIT</button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         CHATBOT SCREEN
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="chat-screen" id="chat-screen">
+        <header class="flex justify-between items-center pb-4 border-b border-white/5">
+            <h1 class="text-2xl font-extrabold tracking-tight">
+                FLUID<span class="gradient-text">TYPE</span>
+                <span class="text-xs text-[#475569] font-normal ml-2 tracking-widest">AI CHAT</span>
+            </h1>
+            <div class="text-xs text-[#475569] font-bold uppercase tracking-widest">Ask any topic</div>
+        </header>
+
+        <div class="chat-messages" id="chat-messages">
+            <div class="msg-bubble msg-ai">
+                Welcome to FluidType AI. Ask me about any topic - AI, technology, science, history, or anything you want to learn. I will generate a paragraph you can practice typing!
+            </div>
+        </div>
+
+        <div class="chat-input-wrap">
+            <input type="text" class="chat-input" id="chat-input" placeholder="Ask about AI, tech, space..." autocomplete="off">
+            <button class="chat-send" id="chat-send">Send</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         TYPING PRACTICE MODAL
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="typing-modal" id="typing-modal">
+        <canvas id="thunder-canvas"></canvas>
+        <div class="scanline"></div>
+
+        <!-- Start Typing Button (Top Left, circular blue) -->
+        <button class="start-typing-btn glowing" id="start-typing-btn" title="Start Typing">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+        </button>
+
+        <!-- Close Modal Button -->
+        <button class="close-modal-btn" id="close-modal-btn">&#10005;</button>
+
+        <div class="typing-modal-content">
+
+            <!-- ═══ DIFFICULTY SELECTOR (3 Categories) ═══ -->
+            <div class="flex justify-center">
+                <div class="flex glass-panel rounded-xl p-1.5 shadow-lg" id="difficulty-selector">
+                    <button data-level="1" class="diff-btn px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 text-[#06B6D4] bg-[rgba(6,182,212,0.1)] shadow-sm">a-z</button>
+                    <button data-level="2" class="diff-btn px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 text-[#475569] hover:text-[#F8FAFC]">A-Z</button>
+                    <button data-level="3" class="diff-btn px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 text-[#475569] hover:text-[#F8FAFC]">A-Z + !?</button>
+                </div>
+            </div>
+
+            <!-- Focused Metrics Dashboard -->
+            <div class="flex justify-between items-end h-14 px-2">
+                <div class="flex gap-8">
+                    <div class="flex flex-col">
+                        <span class="text-xs text-[#475569] font-bold uppercase tracking-widest mb-1">WPM</span>
+                        <span class="text-4xl font-black leading-none text-white tracking-tight" id="wpm">0</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-xs text-[#475569] font-bold uppercase tracking-widest mb-1">Accuracy</span>
+                        <span class="text-4xl font-black leading-none text-white tracking-tight"><span id="accuracy">100</span><span class="text-2xl text-[#475569]">%</span></span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-xs text-[#475569] font-bold uppercase tracking-widest mb-1">Progress</span>
+                        <span class="text-4xl font-black leading-none text-white tracking-tight"><span id="progress">0</span><span class="text-2xl text-[#475569]">%</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Typing Canvas -->
+            <div id="typing-container" class="relative w-full text-[1.65rem] leading-[2.2] cursor-text select-none focus:outline-none" tabindex="0">
+                <textarea id="mobile-input-target" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+                <div id="text-display" class="flex flex-wrap pointer-events-none"></div>
+                <div id="focus-overlay" class="absolute inset-0 glass-panel rounded-2xl flex items-center justify-center transition-opacity duration-300 hidden">
+                    <span class="text-white font-medium flex items-center gap-3 px-6 py-3 rounded-full bg-white/5 border border-white/10">
+                        <svg class="w-5 h-5 text-[#06B6D4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                        Tap to engage
+                    </span>
+                </div>
+            </div>
+
+            <!-- Sleek Controls -->
+            <div class="flex justify-center mt-2">
+                <button id="restart-btn" class="text-[#475569] hover:text-[#06B6D4] transition-all duration-300 p-4 rounded-full hover:bg-[rgba(6,182,212,0.1)] focus:outline-none group" aria-label="Restart Drill">
+                    <svg class="w-7 h-7 transform group-hover:-rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ═══════════════════════════════════════════════════════════
+           STATE ENGINE
+           ═══════════════════════════════════════════════════════════ */
+        const state = {
+            targetDifficulty: 1,
+            rawText: "",
+            charArray: [],
+            typedArray: [],
+            currentIndex: 0,
+            startTime: null,
+            timerActive: false,
+            totalKeystrokes: 0,
+            correctKeystrokes: 0,
+            weakKeys: {},
+            isTypingStarted: false,
+            isBlocked: false
+        };
+
+        /* ═══════════════════════════════════════════════════════════
+           DOM ELEMENTS
+           ═══════════════════════════════════════════════════════════ */
+        const els = {
+            passwordScreen: document.getElementById('password-screen'),
+            passwordInput: document.getElementById('password-input'),
+            passwordError: document.getElementById('password-error'),
+            initScreen: document.getElementById('init-screen'),
+            initBtn: document.getElementById('init-btn'),
+            chatScreen: document.getElementById('chat-screen'),
+            chatMessages: document.getElementById('chat-messages'),
+            chatInput: document.getElementById('chat-input'),
+            chatSend: document.getElementById('chat-send'),
+            typingModal: document.getElementById('typing-modal'),
+            startTypingBtn: document.getElementById('start-typing-btn'),
+            closeModalBtn: document.getElementById('close-modal-btn'),
+            diffButtons: document.querySelectorAll('.diff-btn'),
+            container: document.getElementById('typing-container'),
+            display: document.getElementById('text-display'),
+            mobileInput: document.getElementById('mobile-input-target'),
+            focusOverlay: document.getElementById('focus-overlay'),
+            restartBtn: document.getElementById('restart-btn'),
+            wpm: document.getElementById('wpm'),
+            accuracy: document.getElementById('accuracy'),
+            progress: document.getElementById('progress'),
+            thunderCanvas: document.getElementById('thunder-canvas')
+        };
+
+        /* ═══════════════════════════════════════════════════════════
+           TEXT SANITIZER — Remove non-keyboard characters
+           ═══════════════════════════════════════════════════════════ */
+        function sanitizeText(text) {
+            if (!text) return '';
+            return text
+                .replace(/[—–]/g, '-')
+                .replace(/[‘’]/g, "'")
+                .replace(/[“”]/g, '"')
+                .replace(/…/g, '...')
+                .replace(/[^\x20-\x7E]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           PASSWORD SYSTEM (Password: 1911)
+           ═══════════════════════════════════════════════════════════ */
+        els.passwordInput.addEventListener('input', (e) => {
+            const val = e.target.value;
+            els.passwordError.classList.remove('show');
+            if (val === '1911') {
+                setTimeout(() => {
+                    els.passwordScreen.classList.add('hidden');
+                    setTimeout(() => {
+                        els.initScreen.classList.remove('hidden');
+                    }, 300);
+                }, 400);
+            } else if (val.length >= 4) {
+                els.passwordError.classList.add('show');
+                els.passwordInput.value = '';
+                els.passwordInput.classList.add('shake');
+                setTimeout(() => els.passwordInput.classList.remove('shake'), 300);
+            }
+        });
+
+        /* ═══════════════════════════════════════════════════════════
+           INIT SCREEN
+           ═══════════════════════════════════════════════════════════ */
+        els.initBtn.addEventListener('click', () => {
+            els.initScreen.classList.add('hidden');
+            setTimeout(() => {
+                els.chatScreen.classList.add('active');
+                els.chatInput.focus();
+            }, 300);
+        });
+
+        /* ═══════════════════════════════════════════════════════════
+           CHATBOT SYSTEM (Backend API)
+           ═══════════════════════════════════════════════════════════ */
+        async function sendMessage() {
+            const text = els.chatInput.value.trim();
+            if (!text) return;
+
+            addMessage(text, 'user');
+            els.chatInput.value = '';
+            els.chatSend.disabled = true;
+
+            const typingId = showTypingIndicator();
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+
+                removeTypingIndicator(typingId);
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.detail || 'Server error');
+                }
+
+                const data = await response.json();
+                const aiText = sanitizeText(data.text || "I couldn't generate a response. Try again!");
+                addMessage(aiText, 'ai');
+
+            } catch (err) {
+                removeTypingIndicator(typingId);
+                addMessage("Sorry, I couldn't connect to the AI. Please try again later.", 'ai');
+                console.error(err);
+            } finally {
+                els.chatSend.disabled = false;
+            }
+        }
+
+        function addMessage(text, role) {
+            const bubble = document.createElement('div');
+            bubble.className = `msg-bubble msg-${role}`;
+            bubble.textContent = text;
+            if (role === 'ai') {
+                bubble.classList.add('tap-hint');
+                bubble.addEventListener('click', () => openTypingModal(text));
+            }
+            els.chatMessages.appendChild(bubble);
+            els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const id = 'typing-' + Date.now();
+            const div = document.createElement('div');
+            div.id = id;
+            div.className = 'typing-indicator msg-bubble msg-ai';
+            div.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+            els.chatMessages.appendChild(div);
+            els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
+            return id;
+        }
+
+        function removeTypingIndicator(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+
+        els.chatSend.addEventListener('click', sendMessage);
+        els.chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        /* ═══════════════════════════════════════════════════════════
+           DIFFICULTY SELECTOR (3 Categories)
+           ═══════════════════════════════════════════════════════════ */
+        els.diffButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                els.diffButtons.forEach(b => {
+                    b.classList.remove('text-[#06B6D4]', 'bg-[rgba(6,182,212,0.1)]');
+                    b.classList.add('text-[#475569]');
+                });
+                const target = e.target;
+                target.classList.add('text-[#06B6D4]', 'bg-[rgba(6,182,212,0.1)]');
+                target.classList.remove('text-[#475569]');
+                state.targetDifficulty = parseInt(target.getAttribute('data-level'));
+                if (state.rawText) {
+                    processTextForDifficulty(state.rawText);
+                    renderTextUI();
+                    els.mobileInput.focus();
+                }
+            });
+        });
+
+        function processTextForDifficulty(text) {
+            let processed = text;
+            if (state.targetDifficulty === 1) {
+                processed = processed.toLowerCase().replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim();
+            } else if (state.targetDifficulty === 2) {
+                processed = processed.replace(/[^a-zA-Z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+            } else {
+                processed = processed.replace(/\s+/g, ' ').trim();
+            }
+            const words = processed.split(' ');
+            if (words.length > 40) processed = words.slice(0, 40).join(' ');
+            state.charArray = processed.split('');
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           TYPING MODAL
+           ═══════════════════════════════════════════════════════════ */
+        function openTypingModal(text) {
+            const cleanText = sanitizeText(text);
+            state.rawText = cleanText;
+            state.typedArray = [];
+            state.currentIndex = 0;
+            state.startTime = null;
+            state.timerActive = false;
+            state.totalKeystrokes = 0;
+            state.correctKeystrokes = 0;
+            state.isTypingStarted = false;
+            state.isBlocked = false;
+
+            els.mobileInput.value = '';
+            els.wpm.textContent = '0';
+            els.accuracy.textContent = '100';
+            els.progress.textContent = '0';
+            els.container.scrollTop = 0;
+
+            processTextForDifficulty(cleanText);
+            renderTextUI();
+            els.typingModal.classList.add('active');
+            els.startTypingBtn.classList.add('glowing');
+        }
+
+        els.closeModalBtn.addEventListener('click', () => {
+            els.typingModal.classList.remove('active');
+            state.timerActive = false;
+        });
+
+        els.startTypingBtn.addEventListener('click', () => {
+            els.mobileInput.focus();
+            els.startTypingBtn.classList.remove('glowing');
+            state.isTypingStarted = true;
+        });
+
+        /* ═══════════════════════════════════════════════════════════
+           TYPING ENGINE — HARD STOP MECHANIC
+           ═══════════════════════════════════════════════════════════ */
+        function renderTextUI() {
+            els.display.innerHTML = '';
+            state.charArray.forEach((char, index) => {
+                const span = document.createElement('span');
+                span.innerText = char;
+                span.className = 'char untyped';
+                span.id = `char-${index}`;
+                els.display.appendChild(span);
+            });
+            updateCursorUI();
+        }
+
+        function updateCursorUI() {
+            document.querySelectorAll('.char').forEach(el => {
+                el.classList.remove('caret', 'caret-static');
+            });
+            if (state.currentIndex < state.charArray.length) {
+                const activeChar = document.getElementById(`char-${state.currentIndex}`);
+                if (activeChar) {
+                    activeChar.classList.add(state.timerActive ? 'caret-static' : 'caret');
+                }
+            }
+        }
+
+        function removeCursorUI() {
+            document.querySelectorAll('.char').forEach(el => el.classList.remove('caret', 'caret-static'));
+        }
+
+        els.container.addEventListener('click', () => {
+            els.mobileInput.focus();
+        });
+
+        els.mobileInput.addEventListener('focus', () => {
+            els.focusOverlay.classList.add('hidden');
+            updateCursorUI();
+        });
+
+        els.mobileInput.addEventListener('blur', () => {
+            if (state.currentIndex < state.charArray.length) {
+                els.focusOverlay.classList.remove('hidden');
+                removeCursorUI();
+                els.container.scrollTop = 0;
+            }
+        });
+
+        els.restartBtn.addEventListener('click', () => {
+            state.typedArray = [];
+            state.currentIndex = 0;
+            state.startTime = null;
+            state.timerActive = false;
+            state.totalKeystrokes = 0;
+            state.correctKeystrokes = 0;
+            state.isBlocked = false;
+            els.mobileInput.value = '';
+            els.wpm.textContent = '0';
+            els.accuracy.textContent = '100';
+            els.progress.textContent = '0';
+            els.container.scrollTop = 0;
+            renderTextUI();
+            els.mobileInput.focus();
+        });
+
+        /* ═══════════════════════════════════════════════════════════
+           SCROLL ENGINE — Auto-scroll & Manual Scroll Lock
+           ═══════════════════════════════════════════════════════════ */
+        function getLineHeight() {
+            const c0 = document.getElementById('char-0');
+            if (!c0) return 58;
+            for (let i = 1; i < state.charArray.length; i++) {
+                const c = document.getElementById(`char-${i}`);
+                if (c && c.offsetTop > c0.offsetTop) {
+                    return c.offsetTop - c0.offsetTop;
+                }
+            }
+            const style = window.getComputedStyle(els.container);
+            const lh = style.lineHeight;
+            if (lh === 'normal') {
+                const fs = parseFloat(style.fontSize);
+                return fs * 1.6;
+            }
+            return parseFloat(lh);
+        }
+
+        function getCurrentLine(index) {
+            const char = document.getElementById(`char-${index}`);
+            if (!char) return 0;
+            const top = char.offsetTop;
+            let line = 0;
+            for (let i = 0; i < index; i++) {
+                const c = document.getElementById(`char-${i}`);
+                if (c && c.offsetTop < top - 2) line++;
+            }
+            return line;
+        }
+
+        function autoScroll() {
+            if (!state.isTypingStarted || state.charArray.length === 0) return;
+            const line = getCurrentLine(state.currentIndex);
+            const lineHeight = getLineHeight();
+            if (line >= 2) {
+                els.container.scrollTop = (line - 1) * lineHeight;
+            } else {
+                els.container.scrollTop = 0;
+            }
+        }
+
+        function preventManualScroll(e) {
+            if (state.isTypingStarted && state.currentIndex < state.charArray.length) {
+                e.preventDefault();
+            }
+        }
+        els.container.addEventListener('wheel', preventManualScroll, { passive: false });
+        els.container.addEventListener('touchmove', preventManualScroll, { passive: false });
+
+        /* ═══════════════════════════════════════════════════════════
+           KEY HANDLER — HARD STOP + BACKSPACE ALLOWED
+           ═══════════════════════════════════════════════════════════ */
+        els.mobileInput.addEventListener('input', handleTypingInput);
+
+        window.addEventListener('keydown', function(e) {
+            if (e.code === 'Space' && e.target === document.body) {
+                e.preventDefault();
+                els.mobileInput.focus();
+            }
+        });
+
+        function handleTypingInput(e) {
+            const inputValue = els.mobileInput.value;
+            const inputLength = inputValue.length;
+
+            if (!state.timerActive && inputLength > 0 && !state.isBlocked) {
+                state.timerActive = true;
+                state.startTime = performance.now();
+                requestAnimationFrame(calculateMetricsLoop);
+            }
+
+            if (!state.isTypingStarted && inputLength > 0) {
+                state.isTypingStarted = true;
+                els.startTypingBtn.classList.remove('glowing');
+            }
+
+            /* ═══ CASE 1: BACKSPACE (input got shorter) ═══ */
+            if (inputLength < state.currentIndex) {
+                const diff = state.currentIndex - inputLength;
+                for (let i = 0; i < diff; i++) {
+                    if (state.currentIndex > 0) {
+                        state.currentIndex--;
+                        state.typedArray.pop();
+                        const span = document.getElementById(`char-${state.currentIndex}`);
+                        if (span) {
+                            span.className = 'char untyped';
+                        }
+                    }
+                }
+                state.isBlocked = false;
+                updateCursorUI();
+                updateProgress();
+                autoScroll();
+                return;
+            }
+
+            /* ═══ CASE 2: BLOCKED — wrong char was typed, can only fix or go back ═══ */
+            if (state.isBlocked) {
+                if (inputLength > state.currentIndex) {
+                    const typedChar = inputValue[state.currentIndex];
+                    const expectedChar = state.charArray[state.currentIndex];
+
+                    if (typedChar === expectedChar) {
+                        state.isBlocked = false;
+                        state.typedArray.push(typedChar);
+                        state.correctKeystrokes++;
+                        state.totalKeystrokes++;
+
+                        const span = document.getElementById(`char-${state.currentIndex}`);
+                        span.className = 'char correct';
+
+                        state.currentIndex++;
+                        updateCursorUI();
+                        updateProgress();
+                        autoScroll();
+
+                        spawnThunderBolt(state.currentIndex - 1, 'correct');
+
+                        if (state.currentIndex >= state.charArray.length) {
+                            state.timerActive = false;
+                            els.mobileInput.blur();
+                        }
+                    } else {
+                        state.totalKeystrokes++;
+                        els.mobileInput.value = state.typedArray.join('');
+
+                        const span = document.getElementById(`char-${state.currentIndex}`);
+                        if (span) {
+                            span.classList.remove('shake');
+                            void span.offsetWidth;
+                            span.classList.add('shake');
+                        }
+                    }
+                }
+                return;
+            }
+
+            /* ═══ CASE 3: NORMAL FORWARD TYPING (not blocked) ═══ */
+            if (state.currentIndex < state.charArray.length && inputLength > state.currentIndex) {
+                const typedChar = inputValue[state.currentIndex];
+                const expectedChar = state.charArray[state.currentIndex];
+                const span = document.getElementById(`char-${state.currentIndex}`);
+                state.totalKeystrokes++;
+
+                if (typedChar === expectedChar) {
+                    state.typedArray.push(typedChar);
+                    state.correctKeystrokes++;
+                    span.className = 'char correct';
+                    state.currentIndex++;
+                    updateCursorUI();
+                    updateProgress();
+                    autoScroll();
+
+                    spawnThunderBolt(state.currentIndex - 1, 'correct');
+
+                    if (state.currentIndex >= state.charArray.length) {
+                        state.timerActive = false;
+                        els.mobileInput.blur();
+                    }
+                } else {
+                    span.classList.remove('untyped');
+                    span.classList.add('incorrect');
+                    void span.offsetWidth;
+                    span.classList.add('shake');
+
+                    state.isBlocked = true;
+
+                    const lowerExpected = expectedChar.toLowerCase();
+                    if (!state.weakKeys[lowerExpected]) state.weakKeys[lowerExpected] = { misses: 0 };
+                    state.weakKeys[lowerExpected].misses += 1;
+
+                    els.mobileInput.value = state.typedArray.join('');
+
+                    spawnThunderBolt(state.currentIndex, 'wrong');
+                    playThunderRumble();
+                }
+            }
+        }
+
+        function updateProgress() {
+            const pct = state.charArray.length > 0 ? Math.round((state.currentIndex / state.charArray.length) * 100) : 0;
+            els.progress.textContent = pct;
+        }
+
+        function calculateMetricsLoop() {
+            if (!state.timerActive && state.currentIndex === 0) return;
+            const timeElapsedMin = (performance.now() - state.startTime) / 60000;
+            let wpmVal = (state.correctKeystrokes / 5) / timeElapsedMin;
+            let accVal = state.totalKeystrokes > 0 ? (state.correctKeystrokes / state.totalKeystrokes) * 100 : 100;
+            if (wpmVal === Infinity || isNaN(wpmVal)) wpmVal = 0;
+            if (accVal < 0 || isNaN(accVal)) accVal = 100;
+            els.wpm.innerText = Math.round(wpmVal);
+            els.accuracy.innerText = Math.round(accVal);
+            if (state.timerActive) {
+                requestAnimationFrame(calculateMetricsLoop);
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           ═══ ZENITSU THUNDER ENGINE — BLUE THEME ═══
+           ═══════════════════════════════════════════════════════════ */
+        const canvas = els.thunderCanvas;
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let charW = 9.6;
+
+        function resizeThunderCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            const fsize = parseFloat(window.getComputedStyle(els.display).fontSize) || 26.4;
+            charW = fsize * 0.601;
+        }
+        resizeThunderCanvas();
+        window.addEventListener('resize', resizeThunderCanvas);
+
+        /* ═══ Audio Context ═══ */
+        let audioCtx = null;
+        function getAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+
+        /* ═══ Sharp electric CRACK — for correct keystrokes ═══ */
+        function playThunderCrack() {
+            try {
+                const ac = getAudio();
+                const now = ac.currentTime;
+                const dur = 0.55;
+                const sr = ac.sampleRate;
+                const buf = ac.createBuffer(1, sr * dur, sr);
+                const d = buf.getChannelData(0);
+                for (let i = 0; i < d.length; i++) {
+                    const t = i / sr;
+                    const transient = t < 0.005 ? 1.0 : Math.exp(-t * 9);
+                    const rumble = Math.exp(-t * 2.2);
+                    d[i] = (Math.random() * 2 - 1) * (transient * 0.9 + rumble * 0.4);
+                }
+                const noise = ac.createBufferSource();
+                noise.buffer = buf;
+                const bpLow = ac.createBiquadFilter();
+                bpLow.type = 'bandpass';
+                bpLow.frequency.setValueAtTime(120, now);
+                bpLow.frequency.exponentialRampToValueAtTime(60, now + dur);
+                bpLow.Q.value = 0.5;
+                const bpCrack = ac.createBiquadFilter();
+                bpCrack.type = 'bandpass';
+                bpCrack.frequency.value = 3500;
+                bpCrack.Q.value = 0.8;
+                const gainCrack = ac.createGain();
+                gainCrack.gain.setValueAtTime(0.55, now);
+                gainCrack.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                const gainRumble = ac.createGain();
+                gainRumble.gain.setValueAtTime(0.0, now);
+                gainRumble.gain.linearRampToValueAtTime(0.35, now + 0.03);
+                gainRumble.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                const master = ac.createGain();
+                master.gain.value = 0.7;
+                noise.connect(bpCrack); bpCrack.connect(gainCrack); gainCrack.connect(master);
+                noise.connect(bpLow); bpLow.connect(gainRumble); gainRumble.connect(master);
+                master.connect(ac.destination);
+                noise.start(now);
+                noise.stop(now + dur);
+            } catch(e) {}
+        }
+
+        /* ═══ Deep distant RUMBLE — for wrong keystrokes (low tone) ═══ */
+        function playThunderRumble() {
+            try {
+                const ac = getAudio();
+                const now = ac.currentTime;
+                const dur = 1.1;
+                const sr = ac.sampleRate;
+                const buf = ac.createBuffer(1, sr * dur, sr);
+                const d = buf.getChannelData(0);
+                for (let i = 0; i < d.length; i++) {
+                    d[i] = (Math.random() * 2 - 1) * Math.exp(-(i / sr) * 1.8);
+                }
+                const noise = ac.createBufferSource();
+                noise.buffer = buf;
+                const lp = ac.createBiquadFilter();
+                lp.type = 'lowpass';
+                lp.frequency.setValueAtTime(100, now);
+                lp.frequency.exponentialRampToValueAtTime(40, now + dur);
+                lp.Q.value = 1.5;
+                const bp = ac.createBiquadFilter();
+                bp.type = 'bandpass';
+                bp.frequency.value = 220;
+                bp.Q.value = 0.6;
+                const gainLP = ac.createGain();
+                gainLP.gain.setValueAtTime(0.0, now);
+                gainLP.gain.linearRampToValueAtTime(0.5, now + 0.05);
+                gainLP.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                const gainBP = ac.createGain();
+                gainBP.gain.setValueAtTime(0.0, now);
+                gainBP.gain.linearRampToValueAtTime(0.25, now + 0.04);
+                gainBP.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+                const master = ac.createGain();
+                master.gain.value = 0.65;
+                noise.connect(lp); lp.connect(gainLP); gainLP.connect(master);
+                noise.connect(bp); bp.connect(gainBP); gainBP.connect(master);
+                master.connect(ac.destination);
+                noise.start(now);
+                noise.stop(now + dur);
+            } catch(e) {}
+        }
+
+        /* ═══ Lightning Bolt Class — BLUE THEME ═══
+           type: 'correct'  → blue bolts going RIGHT (dir = 1)
+           type: 'wrong'    → blue arc bolts going LEFT (dir = -1) + thicker glow */
+        class LightningBolt {
+            constructor(x, y, type) {
+                this.startX = x;
+                this.y = y + (Math.random() - 0.5) * 10;
+                this.life = 1;
+                this.type = type;
+                this.dir = (type === 'correct') ? 1 : -1;
+                this.totalLen = charW;
+                this.decay = 0.055 + Math.random() * 0.03;
+
+                if (type === 'correct') {
+                    this.colTip  = '#e0f7ff';
+                    this.colMid  = '#4dcfff';
+                    this.colGlow = '#06B6D4';
+                    this.w = 2.6 + Math.random() * 1.2;
+                } else {
+                    this.colTip  = '#c8eeff';
+                    this.colMid  = '#06B6D4';
+                    this.colGlow = '#0891b2';
+                    this.w = 3.0 + Math.random() * 1.5;
+                }
+                this.buildPath();
+            }
+
+            buildPath() {
+                const segs = Math.max(3, Math.round(this.totalLen / 3));
+                const segLen = this.totalLen / segs;
+                this.pts = [{ x: 0, y: 0 }];
+                let cx = 0, cy = 0;
+                this.branches = [];
+                for (let i = 1; i <= segs; i++) {
+                    cx += segLen + (Math.random() - 0.3) * segLen * 0.3;
+                    cy += (Math.random() - 0.5) * 6;
+                    this.pts.push({ x: cx, y: cy });
+                    if (i > 0 && i < segs && Math.random() < 0.45) {
+                        const bLen = charW * (0.2 + Math.random() * 0.4);
+                        const bDir = Math.random() < 0.5 ? -1 : 1;
+                        const bAngle = bDir * (0.3 + Math.random() * 0.5);
+                        const bSegs = 2 + Math.floor(Math.random() * 2);
+                        const branch = [{ x: cx, y: cy }];
+                        let bx = cx, by = cy;
+                        for (let j = 1; j <= bSegs; j++) {
+                            bx += Math.cos(bAngle) * (bLen / bSegs) + (Math.random() - 0.3) * 4;
+                            by += Math.sin(bAngle) * (bLen / bSegs) + (Math.random() - 0.5) * 4;
+                            branch.push({ x: bx, y: by });
+                        }
+                        this.branches.push(branch);
+                    }
+                }
+            }
+
+            strokePath(pts, offX, offY, color, width, blur, alpha) {
+                if (pts.length < 2) return;
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.shadowBlur = blur;
+                ctx.shadowColor = color;
+                ctx.strokeStyle = color;
+                ctx.lineWidth = width;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.translate(offX, offY);
+                ctx.beginPath();
+                ctx.moveTo(pts[0].x * this.dir, pts[0].y);
+                for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x * this.dir, pts[i].y);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            drawPoly(pts, ox, oy, a) {
+                this.strokePath(pts, ox, oy, this.colGlow, this.w + 5, 28, a * 0.28);
+                this.strokePath(pts, ox, oy, this.colMid, this.w, 12, a * 0.9);
+                this.strokePath(pts, ox, oy, this.colTip, this.w * 0.3, 4, a);
+            }
+
+            update() { this.life -= this.decay; }
+
+            draw() {
+                const a = Math.max(0, this.life);
+                this.drawPoly(this.pts, this.startX, this.y, a);
+                for (const b of this.branches) {
+                    this.drawPoly(b, this.startX, this.y, a * 0.55);
+                }
+            }
+        }
+
+        function spawnThunderBolt(charIndex, type) {
+            if (!state.isTypingStarted) return;
+            const span = document.getElementById(`char-${charIndex}`);
+            if (!span) return;
+            const rect = span.getBoundingClientRect();
+            const x = rect.left + rect.width / 2;
+            const y = rect.top + rect.height / 2;
+            const count = (type === 'correct') ? 2 : 3;
+            for (let i = 0; i < count; i++) {
+                particles.push(new LightningBolt(x, y + (Math.random() - 0.5) * 10, type));
+            }
+            if (type === 'correct') {
+                playThunderCrack();
+            }
+        }
+
+        /* ═══ Thunder Render Loop ═══ */
+        (function thunderLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(thunderLoop);
+        })();
+
+        /* ═══════════════════════════════════════════════════════════
+           BOOT
+           ═══════════════════════════════════════════════════════════ */
+        document.addEventListener('DOMContentLoaded', () => {
+            els.passwordInput.focus();
+        });
+    </script>
+</body>
+</html>
