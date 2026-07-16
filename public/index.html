@@ -5,18 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>FluidType | AI Learning Engine</title>
 
-    <!-- Premium Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-        /* ═══════════════════════════════════════════════════════════
-           PREMIUM DARK THEME PALETTE
-           ═══════════════════════════════════════════════════════════ */
         :root {
             --bg-base: #0B0F19;
             --bg-surface: #151C2C;
@@ -121,22 +115,6 @@
             -webkit-text-fill-color: transparent;
         }
 
-        /* Diamond Button Animation */
-        .diamond-btn {
-            transform: rotate(45deg);
-            transition: all 0.3s ease;
-        }
-        .diamond-btn:hover {
-            transform: rotate(45deg) scale(1.1);
-            box-shadow: 0 0 15px var(--accent-glow);
-        }
-        .diamond-icon {
-            transform: rotate(-45deg);
-        }
-
-        /* ═══════════════════════════════════════════════════════════
-           PASSWORD SCREEN
-           ═══════════════════════════════════════════════════════════ */
         .password-screen {
             position: fixed;
             inset: 0;
@@ -193,9 +171,6 @@
         }
         .password-error.show { opacity: 1; }
 
-        /* ═══════════════════════════════════════════════════════════
-           INIT SCREEN
-           ═══════════════════════════════════════════════════════════ */
         .init-screen {
             position: fixed;
             inset: 0;
@@ -232,9 +207,6 @@
             transform: scale(1.05);
         }
 
-        /* ═══════════════════════════════════════════════════════════
-           CHATBOT STYLES
-           ═══════════════════════════════════════════════════════════ */
         .chat-screen {
             display: none;
             flex-direction: column;
@@ -364,9 +336,6 @@
             40% { transform: scale(1); opacity: 1; }
         }
 
-        /* ═══════════════════════════════════════════════════════════
-           TYPING PRACTICE MODAL
-           ═══════════════════════════════════════════════════════════ */
         .typing-modal {
             position: fixed;
             inset: 0;
@@ -394,7 +363,6 @@
             gap: 20px;
         }
 
-        /* Start Typing Button (Top Left, circular blue glow) */
         .start-typing-btn {
             position: fixed;
             top: 20px;
@@ -448,7 +416,6 @@
             border-color: var(--error-color);
         }
 
-        /* Thunder Canvas */
         #thunder-canvas {
             position: fixed;
             inset: 0;
@@ -458,7 +425,6 @@
             z-index: 5;
         }
 
-        /* Scanline Overlay (Zenitsu style subtle) */
         .scanline {
             position: fixed;
             inset: 0;
@@ -466,16 +432,29 @@
             z-index: 2;
             background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(6,182,212,0.012) 2px, rgba(6,182,212,0.012) 4px);
         }
+
+        /* Settings Dropdown */
+        .settings-dropdown {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 8px);
+            width: 220px;
+            z-index: 50;
+            background: rgba(21, 28, 44, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+        .settings-dropdown.hidden { display: none; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 relative">
 
-    <!-- Ambient Background Glow -->
     <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#06B6D4] opacity-[0.03] rounded-full blur-[100px] pointer-events-none"></div>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         PASSWORD SCREEN (Password: 1911)
-         ═══════════════════════════════════════════════════════════ -->
+    <!-- PASSWORD SCREEN -->
     <div class="password-screen" id="password-screen">
         <h1 class="text-3xl font-extrabold tracking-tight mb-4">
             FLUID<span class="gradient-text">TYPE</span>
@@ -485,9 +464,7 @@
         <div class="password-error" id="password-error">Access Denied</div>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         INIT SCREEN
-         ═══════════════════════════════════════════════════════════ -->
+    <!-- INIT SCREEN -->
     <div class="init-screen hidden" id="init-screen">
         <h1 class="text-3xl font-extrabold tracking-tight">
             FLUID<span class="gradient-text">TYPE</span>
@@ -498,16 +475,45 @@
         <button class="init-btn" id="init-btn">INIT</button>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         CHATBOT SCREEN
-         ═══════════════════════════════════════════════════════════ -->
+    <!-- CHATBOT SCREEN -->
     <div class="chat-screen" id="chat-screen">
-        <header class="flex justify-between items-center pb-4 border-b border-white/5">
+        <header class="flex justify-between items-center pb-4 border-b border-white/5 relative">
             <h1 class="text-2xl font-extrabold tracking-tight">
                 FLUID<span class="gradient-text">TYPE</span>
                 <span class="text-xs text-[#475569] font-normal ml-2 tracking-widest">AI CHAT</span>
             </h1>
-            <div class="text-xs text-[#475569] font-bold uppercase tracking-widest">Ask any topic</div>
+            <div class="flex items-center gap-3">
+                <div class="text-xs text-[#475569] font-bold uppercase tracking-widest hidden sm:block">Ask any topic</div>
+                <div class="relative">
+                    <button id="settings-btn" class="p-2 rounded-lg hover:bg-white/5 transition-colors border border-white/5">
+                        <svg class="w-5 h-5 text-[#475569]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </button>
+                    <div id="settings-dropdown" class="settings-dropdown hidden">
+                        <div class="text-xs text-[#475569] font-bold uppercase tracking-widest mb-2 px-1">AI Provider</div>
+                        <div class="space-y-0.5" id="provider-options">
+                            <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors">
+                                <input type="radio" name="provider" value="auto" checked class="accent-[#06B6D4] w-4 h-4">
+                                <span class="text-sm text-[#F8FAFC]">Auto (Failover)</span>
+                            </label>
+                            <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors">
+                                <input type="radio" name="provider" value="groq1" class="accent-[#06B6D4] w-4 h-4">
+                                <span class="text-sm text-[#F8FAFC]">Groq Key 1</span>
+                            </label>
+                            <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors">
+                                <input type="radio" name="provider" value="groq2" class="accent-[#06B6D4] w-4 h-4">
+                                <span class="text-sm text-[#F8FAFC]">Groq Key 2</span>
+                            </label>
+                            <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors">
+                                <input type="radio" name="provider" value="gemini1" class="accent-[#06B6D4] w-4 h-4">
+                                <span class="text-sm text-[#F8FAFC]">Gemini Key 1</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </header>
 
         <div class="chat-messages" id="chat-messages">
@@ -522,26 +528,20 @@
         </div>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         TYPING PRACTICE MODAL
-         ═══════════════════════════════════════════════════════════ -->
+    <!-- TYPING PRACTICE MODAL -->
     <div class="typing-modal" id="typing-modal">
         <canvas id="thunder-canvas"></canvas>
         <div class="scanline"></div>
 
-        <!-- Start Typing Button (Top Left, circular blue) -->
         <button class="start-typing-btn glowing" id="start-typing-btn" title="Start Typing">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
             </svg>
         </button>
 
-        <!-- Close Modal Button -->
         <button class="close-modal-btn" id="close-modal-btn">&#10005;</button>
 
         <div class="typing-modal-content">
-
-            <!-- ═══ DIFFICULTY SELECTOR (3 Categories) ═══ -->
             <div class="flex justify-center">
                 <div class="flex glass-panel rounded-xl p-1.5 shadow-lg" id="difficulty-selector">
                     <button data-level="1" class="diff-btn px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 text-[#06B6D4] bg-[rgba(6,182,212,0.1)] shadow-sm">a-z</button>
@@ -550,7 +550,6 @@
                 </div>
             </div>
 
-            <!-- Focused Metrics Dashboard -->
             <div class="flex justify-between items-end h-14 px-2">
                 <div class="flex gap-8">
                     <div class="flex flex-col">
@@ -568,7 +567,6 @@
                 </div>
             </div>
 
-            <!-- Interactive Typing Canvas -->
             <div id="typing-container" class="relative w-full text-[1.65rem] leading-[2.2] cursor-text select-none focus:outline-none" tabindex="0">
                 <textarea id="mobile-input-target" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
                 <div id="text-display" class="flex flex-wrap pointer-events-none"></div>
@@ -580,7 +578,6 @@
                 </div>
             </div>
 
-            <!-- Sleek Controls -->
             <div class="flex justify-center mt-2">
                 <button id="restart-btn" class="text-[#475569] hover:text-[#06B6D4] transition-all duration-300 p-4 rounded-full hover:bg-[rgba(6,182,212,0.1)] focus:outline-none group" aria-label="Restart Drill">
                     <svg class="w-7 h-7 transform group-hover:-rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -592,9 +589,6 @@
     </div>
 
     <script>
-        /* ═══════════════════════════════════════════════════════════
-           STATE ENGINE
-           ═══════════════════════════════════════════════════════════ */
         const state = {
             targetDifficulty: 1,
             rawText: "",
@@ -607,12 +601,10 @@
             correctKeystrokes: 0,
             weakKeys: {},
             isTypingStarted: false,
-            isBlocked: false
+            isBlocked: false,
+            selectedProvider: 'auto'
         };
 
-        /* ═══════════════════════════════════════════════════════════
-           DOM ELEMENTS
-           ═══════════════════════════════════════════════════════════ */
         const els = {
             passwordScreen: document.getElementById('password-screen'),
             passwordInput: document.getElementById('password-input'),
@@ -635,12 +627,12 @@
             wpm: document.getElementById('wpm'),
             accuracy: document.getElementById('accuracy'),
             progress: document.getElementById('progress'),
-            thunderCanvas: document.getElementById('thunder-canvas')
+            thunderCanvas: document.getElementById('thunder-canvas'),
+            settingsBtn: document.getElementById('settings-btn'),
+            settingsDropdown: document.getElementById('settings-dropdown'),
+            providerRadios: document.querySelectorAll('input[name="provider"]')
         };
 
-        /* ═══════════════════════════════════════════════════════════
-           TEXT SANITIZER — Remove non-keyboard characters
-           ═══════════════════════════════════════════════════════════ */
         function sanitizeText(text) {
             if (!text) return '';
             return text
@@ -653,9 +645,25 @@
                 .trim();
         }
 
-        /* ═══════════════════════════════════════════════════════════
-           PASSWORD SYSTEM (Password: 1911)
-           ═══════════════════════════════════════════════════════════ */
+        /* SETTINGS MENU */
+        els.settingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            els.settingsDropdown.classList.toggle('hidden');
+        });
+        document.addEventListener('click', (e) => {
+            if (!els.settingsDropdown.classList.contains('hidden') &&
+                !els.settingsDropdown.contains(e.target) &&
+                e.target !== els.settingsBtn) {
+                els.settingsDropdown.classList.add('hidden');
+            }
+        });
+        els.providerRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.checked) state.selectedProvider = e.target.value;
+            });
+        });
+
+        /* PASSWORD */
         els.passwordInput.addEventListener('input', (e) => {
             const val = e.target.value;
             els.passwordError.classList.remove('show');
@@ -674,9 +682,7 @@
             }
         });
 
-        /* ═══════════════════════════════════════════════════════════
-           INIT SCREEN
-           ═══════════════════════════════════════════════════════════ */
+        /* INIT */
         els.initBtn.addEventListener('click', () => {
             els.initScreen.classList.add('hidden');
             setTimeout(() => {
@@ -685,9 +691,7 @@
             }, 300);
         });
 
-        /* ═══════════════════════════════════════════════════════════
-           CHATBOT SYSTEM (Backend API)
-           ═══════════════════════════════════════════════════════════ */
+        /* CHATBOT */
         async function sendMessage() {
             const text = els.chatInput.value.trim();
             if (!text) return;
@@ -702,7 +706,7 @@
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text })
+                    body: JSON.stringify({ message: text, provider: state.selectedProvider })
                 });
 
                 removeTypingIndicator(typingId);
@@ -758,9 +762,7 @@
             if (e.key === 'Enter') sendMessage();
         });
 
-        /* ═══════════════════════════════════════════════════════════
-           DIFFICULTY SELECTOR (3 Categories)
-           ═══════════════════════════════════════════════════════════ */
+        /* DIFFICULTY */
         els.diffButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 els.diffButtons.forEach(b => {
@@ -788,14 +790,11 @@
             } else {
                 processed = processed.replace(/\s+/g, ' ').trim();
             }
-            const words = processed.split(' ');
-            if (words.length > 40) processed = words.slice(0, 40).join(' ');
+            // REMOVED the 40-word limit - now loads the FULL paragraph
             state.charArray = processed.split('');
         }
 
-        /* ═══════════════════════════════════════════════════════════
-           TYPING MODAL
-           ═══════════════════════════════════════════════════════════ */
+        /* TYPING MODAL */
         function openTypingModal(text) {
             const cleanText = sanitizeText(text);
             state.rawText = cleanText;
@@ -816,6 +815,10 @@
 
             processTextForDifficulty(cleanText);
             renderTextUI();
+            // Ensure scroll is at top after render
+            requestAnimationFrame(() => {
+                els.container.scrollTop = 0;
+            });
             els.typingModal.classList.add('active');
             els.startTypingBtn.classList.add('glowing');
         }
@@ -829,11 +832,10 @@
             els.mobileInput.focus();
             els.startTypingBtn.classList.remove('glowing');
             state.isTypingStarted = true;
+            els.container.scrollTop = 0;
         });
 
-        /* ═══════════════════════════════════════════════════════════
-           TYPING ENGINE — HARD STOP MECHANIC
-           ═══════════════════════════════════════════════════════════ */
+        /* TYPING ENGINE */
         function renderTextUI() {
             els.display.innerHTML = '';
             state.charArray.forEach((char, index) => {
@@ -896,9 +898,7 @@
             els.mobileInput.focus();
         });
 
-        /* ═══════════════════════════════════════════════════════════
-           SCROLL ENGINE — Auto-scroll & Manual Scroll Lock
-           ═══════════════════════════════════════════════════════════ */
+        /* SCROLL ENGINE */
         function getLineHeight() {
             const c0 = document.getElementById('char-0');
             if (!c0) return 58;
@@ -948,9 +948,7 @@
         els.container.addEventListener('wheel', preventManualScroll, { passive: false });
         els.container.addEventListener('touchmove', preventManualScroll, { passive: false });
 
-        /* ═══════════════════════════════════════════════════════════
-           KEY HANDLER — HARD STOP + BACKSPACE ALLOWED
-           ═══════════════════════════════════════════════════════════ */
+        /* KEY HANDLER */
         els.mobileInput.addEventListener('input', handleTypingInput);
 
         window.addEventListener('keydown', function(e) {
@@ -975,7 +973,7 @@
                 els.startTypingBtn.classList.remove('glowing');
             }
 
-            /* ═══ CASE 1: BACKSPACE (input got shorter) ═══ */
+            /* BACKSPACE */
             if (inputLength < state.currentIndex) {
                 const diff = state.currentIndex - inputLength;
                 for (let i = 0; i < diff; i++) {
@@ -995,7 +993,7 @@
                 return;
             }
 
-            /* ═══ CASE 2: BLOCKED — wrong char was typed, can only fix or go back ═══ */
+            /* BLOCKED */
             if (state.isBlocked) {
                 if (inputLength > state.currentIndex) {
                     const typedChar = inputValue[state.currentIndex];
@@ -1036,7 +1034,7 @@
                 return;
             }
 
-            /* ═══ CASE 3: NORMAL FORWARD TYPING (not blocked) ═══ */
+            /* NORMAL TYPING */
             if (state.currentIndex < state.charArray.length && inputLength > state.currentIndex) {
                 const typedChar = inputValue[state.currentIndex];
                 const expectedChar = state.charArray[state.currentIndex];
@@ -1097,9 +1095,7 @@
             }
         }
 
-        /* ═══════════════════════════════════════════════════════════
-           ═══ ZENITSU THUNDER ENGINE — BLUE THEME ═══
-           ═══════════════════════════════════════════════════════════ */
+        /* THUNDER ENGINE */
         const canvas = els.thunderCanvas;
         const ctx = canvas.getContext('2d');
         let particles = [];
@@ -1114,7 +1110,6 @@
         resizeThunderCanvas();
         window.addEventListener('resize', resizeThunderCanvas);
 
-        /* ═══ Audio Context ═══ */
         let audioCtx = null;
         function getAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1122,7 +1117,6 @@
             return audioCtx;
         }
 
-        /* ═══ Sharp electric CRACK — for correct keystrokes ═══ */
         function playThunderCrack() {
             try {
                 const ac = getAudio();
@@ -1165,7 +1159,6 @@
             } catch(e) {}
         }
 
-        /* ═══ Deep distant RUMBLE — for wrong keystrokes (low tone) ═══ */
         function playThunderRumble() {
             try {
                 const ac = getAudio();
@@ -1206,9 +1199,6 @@
             } catch(e) {}
         }
 
-        /* ═══ Lightning Bolt Class — BLUE THEME ═══
-           type: 'correct'  → blue bolts going RIGHT (dir = 1)
-           type: 'wrong'    → blue arc bolts going LEFT (dir = -1) + thicker glow */
         class LightningBolt {
             constructor(x, y, type) {
                 this.startX = x;
@@ -1311,7 +1301,6 @@
             }
         }
 
-        /* ═══ Thunder Render Loop ═══ */
         (function thunderLoop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             particles = particles.filter(p => p.life > 0);
@@ -1319,9 +1308,6 @@
             requestAnimationFrame(thunderLoop);
         })();
 
-        /* ═══════════════════════════════════════════════════════════
-           BOOT
-           ═══════════════════════════════════════════════════════════ */
         document.addEventListener('DOMContentLoaded', () => {
             els.passwordInput.focus();
         });
