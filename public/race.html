@@ -8,222 +8,262 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1/dist/peerjs.min.js"></script>
     <style>
-        :root { --bg-base: #0B0F19; --bg-surface: #151C2C; --text-main: #F8FAFC; --text-dim: #475569; --error-color: #EF4444; --error-bg: rgba(239,68,68,0.2); --accent: #06B6D4; --accent-glow: rgba(6,182,212,0.5); --yellow: #FCD34D; --yellow-glow: rgba(252,211,77,0.5); }
+        :root { --bg-base: #0B0F19; --bg-surface: #151C2C; --text-main: #F8FAFC; --text-dim: #475569; --error-color: #EF4444; --error-bg: rgba(239,68,68,0.2); --accent: #06B6D4; --accent-glow: rgba(6,182,212,0.5); --friend: #FFD60A; --friend-glow: rgba(255,214,10,0.5); }
+        * { box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; }
         body { background-color: var(--bg-base); color: var(--text-main); font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
         .gradient-text { background: linear-gradient(135deg, #06B6D4, #8B5CF6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .gradient-text-yellow { background: linear-gradient(135deg, #FCD34D, #F59E0B); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .glass-panel { background: rgba(21,28,44,0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
-        .scanline { position: fixed; inset: 0; pointer-events: none; z-index: 2; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(6,182,212,0.012) 2px, rgba(6,182,212,0.012) 4px); }
         #thunder-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+        .scanline { position: fixed; inset: 0; pointer-events: none; z-index: 2; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(6,182,212,0.012) 2px, rgba(6,182,212,0.012) 4px); }
+        .bg-glow { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 600px; height: 600px; background: #06B6D4; opacity: .03; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0; }
 
-        /* Screens */
-        .screen { position: fixed; inset: 0; z-index: 50; background: var(--bg-base); display: none; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px; overflow-y: auto; transition: opacity 0.5s ease; }
+        /* screens */
+        .screen { display: none; position: fixed; inset: 0; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px; z-index: 10; overflow-y: auto; }
         .screen.active { display: flex; }
-        .password-screen { justify-content: center; gap: 24px; z-index: 100; }
-        .lobby-screen { justify-content: center; gap: 40px; }
-        .host-lobby-screen, .join-lobby-screen { padding-top: 60px; max-width: 800px; margin: 0 auto; width: 100%; gap: 24px; }
-        .race-screen { padding: 0; z-index: 60; }
 
-        /* Password */
-        .password-input { background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px 24px; font-family: 'Fira Code', monospace; font-size: 1.5rem; color: var(--text-main); text-align: center; letter-spacing: 8px; width: 200px; outline: none; transition: border-color 0.3s, box-shadow 0.3s; }
-        .password-input:focus { border-color: var(--accent); box-shadow: 0 0 20px rgba(6,182,212,0.15); }
-        .password-label { font-family: 'Orbitron', sans-serif; font-size: 12px; letter-spacing: 4px; color: var(--accent); text-transform: uppercase; }
-        .password-error { color: var(--error-color); font-size: 0.85rem; height: 20px; opacity: 0; transition: opacity 0.3s; }
-        .password-error.show { opacity: 1; }
-        .shake { animation: shakeError 0.3s cubic-bezier(.36,.07,.19,.97) both; }
-        @keyframes shakeError { 10%,90% { transform: translate3d(-1px,0,0); } 20%,80% { transform: translate3d(2px,0,0); } 30%,50%,70% { transform: translate3d(-3px,0,0); } 40%,60% { transform: translate3d(3px,0,0); } }
+        .status-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 60; display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; }
+        .status-bar.hidden { display: none; }
+        .back-link { font-size: 0.78rem; color: var(--text-dim); text-decoration: none; font-weight: 700; letter-spacing: 0.5px; }
+        .back-link:hover { color: var(--accent); }
+        .conn-pill { display: flex; align-items: center; gap: 7px; font-size: 0.68rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #34D399; background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.25); padding: 6px 12px; border-radius: 99px; }
+        .conn-pill.offline { color: var(--text-dim); background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+        .conn-dot { width: 6px; height: 6px; border-radius: 50%; background: #34D399; box-shadow: 0 0 8px #34D399; animation: pulseDot 1.6s infinite; }
+        .conn-pill.offline .conn-dot { background: var(--text-dim); box-shadow: none; animation: none; }
+        @keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-        /* Lobby Buttons */
-        .lobby-btn { font-family: 'Orbitron', sans-serif; font-size: 14px; letter-spacing: 4px; border: 1px solid var(--accent); background: transparent; color: var(--accent); padding: 20px 56px; border-radius: 12px; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; min-width: 240px; text-align: center; }
-        .lobby-btn:hover { background: rgba(6,182,212,0.1); box-shadow: 0 0 40px rgba(6,182,212,0.2); transform: scale(1.05); }
-        .lobby-btn.yellow { border-color: var(--yellow); color: var(--yellow); }
-        .lobby-btn.yellow:hover { background: rgba(252,211,77,0.1); box-shadow: 0 0 40px rgba(252,211,77,0.2); }
+        .menu-btn { font-family: 'Orbitron', sans-serif; font-size: 13px; letter-spacing: 3px; color: var(--accent); border: 1px solid var(--accent); background: transparent; padding: 16px 36px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; display: inline-flex; align-items: center; gap: 10px; justify-content: center; width: 240px; }
+        .menu-btn:hover { background: rgba(6,182,212,0.1); box-shadow: 0 0 30px rgba(6,182,212,0.2); transform: scale(1.03); }
+        .menu-btn:active { transform: scale(0.97); }
+        .menu-btn.ghost { color: var(--text-dim); border-color: rgba(255,255,255,0.1); }
+        .menu-btn.ghost:hover { color: var(--text-main); border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.03); box-shadow: none; }
+        .menu-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        /* Room Code */
-        .room-code { font-family: 'Fira Code', monospace; font-size: 3.5rem; font-weight: 700; color: var(--accent); letter-spacing: 12px; text-shadow: 0 0 30px var(--accent-glow); }
-        .code-input { background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px 24px; font-family: 'Fira Code', monospace; font-size: 2rem; color: var(--text-main); text-align: center; letter-spacing: 12px; width: 180px; outline: none; transition: border-color 0.3s; }
-        .code-input:focus { border-color: var(--yellow); box-shadow: 0 0 20px rgba(252,211,77,0.15); }
+        .code-input { background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px 24px; font-family: 'Fira Code', monospace; font-size: 1.6rem; color: var(--text-main); text-align: center; letter-spacing: 10px; width: 200px; outline: none; transition: border-color 0.3s, box-shadow 0.3s; }
+        .code-input:focus { border-color: var(--accent); box-shadow: 0 0 20px rgba(6,182,212,0.15); }
+        .code-input::placeholder { letter-spacing: 6px; color: var(--text-dim); }
+        .field-label { font-family: 'Orbitron', sans-serif; font-size: 12px; letter-spacing: 4px; color: var(--accent); text-transform: uppercase; }
+        .field-error { color: var(--error-color); font-size: 0.85rem; min-height: 20px; opacity: 0; transition: opacity 0.3s; text-align: center; }
+        .field-error.show { opacity: 1; }
 
-        /* Player Slots */
-        .player-slot { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 12px; background: rgba(21,28,44,0.5); border: 1px solid rgba(255,255,255,0.06); }
-        .player-slot.active { border-color: var(--accent); box-shadow: 0 0 15px rgba(6,182,212,0.1); }
-        .player-slot.opponent-active { border-color: var(--yellow); box-shadow: 0 0 15px rgba(252,211,77,0.1); }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--text-dim); }
-        .status-dot.online { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
-        .status-dot.waiting { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
+        .room-code-box { font-family: 'Orbitron', sans-serif; font-size: 2.75rem; font-weight: 900; letter-spacing: 12px; color: var(--text-main); background: var(--bg-surface); border: 1px solid rgba(6,182,212,0.25); border-radius: 16px; padding: 20px 20px 20px 40px; text-shadow: 0 0 20px var(--accent-glow); }
+        .copy-btn { font-size: 0.72rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.25); padding: 10px 16px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .copy-btn:hover { background: rgba(6,182,212,0.18); }
+        .wait-dots { display: flex; gap: 6px; }
+        .wait-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: dotBounce 1.4s infinite ease-in-out both; }
+        .wait-dot:nth-child(2) { animation-delay: -0.16s; }
+        .wait-dot:nth-child(3) { animation-delay: -0.32s; }
+        @keyframes dotBounce { 0%,80%,100% { transform: scale(0); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+        .spinner { width: 36px; height: 36px; border-radius: 50%; border: 3px solid rgba(6,182,212,0.15); border-top-color: var(--accent); animation: spin 0.9s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Chat */
-        .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 10px; max-height: 300px; }
+        .toast { position: fixed; top: 18px; left: 50%; transform: translate(-50%,-20px); background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.08); color: var(--text-main); padding: 12px 22px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.4); opacity: 0; pointer-events: none; transition: all 0.35s ease; max-width: 90vw; text-align: center; }
+        .toast.show { opacity: 1; transform: translate(-50%,0); }
+
+        /* setup / chat */
+        #setup-screen { justify-content: flex-start; padding-top: 84px; }
+        .setup-wrap { display: flex; flex-direction: column; height: calc(100vh - 108px); width: 100%; max-width: 800px; gap: 14px; }
+        .diff-selector { display: inline-flex; gap: 4px; background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 5px; }
+        .diff-btn { font-size: 0.8rem; font-weight: 600; padding: 8px 16px; border-radius: 8px; color: var(--text-dim); background: transparent; border: none; cursor: pointer; transition: all 0.2s; }
+        .diff-btn.active { color: var(--accent); background: rgba(6,182,212,0.1); }
+        .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 10px; }
         .chat-messages::-webkit-scrollbar { width: 4px; }
         .chat-messages::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
-        .msg-bubble { max-width: 90%; padding: 12px 16px; border-radius: 14px; font-size: 0.9rem; line-height: 1.5; animation: msgIn 0.3s ease-out; word-break: break-word; }
+        .msg-bubble { max-width: 85%; padding: 14px 18px; border-radius: 14px; font-size: 0.95rem; line-height: 1.6; animation: msgIn 0.3s ease-out; word-break: break-word; }
         @keyframes msgIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .msg-user { align-self: flex-end; background: rgba(6,182,212,0.12); border: 1px solid rgba(6,182,212,0.2); }
-        .msg-ai { align-self: flex-start; background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.05); position: relative; }
-        .msg-ai .use-race-btn { display: none; margin-top: 10px; padding: 6px 14px; border-radius: 8px; border: 1px solid var(--accent); color: var(--accent); background: transparent; font-size: 0.75rem; font-family: 'Orbitron', sans-serif; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
-        .msg-ai .use-race-btn:hover { background: rgba(6,182,212,0.15); }
-        .msg-ai.host-msg .use-race-btn { display: inline-block; }
-        .typing-indicator { display: flex; gap: 6px; padding: 12px 16px; align-self: flex-start; }
-        .typing-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: typingBounce 1.4s infinite ease-in-out both; }
-        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .msg-user { align-self: flex-end; background: rgba(6,182,212,0.12); border: 1px solid rgba(6,182,212,0.2); color: var(--text-main); }
+        .msg-ai { align-self: flex-start; background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.05); color: var(--text-main); }
+        .msg-ai.interactive { cursor: pointer; transition: all 0.2s ease; }
+        .msg-ai.interactive:hover { border-color: rgba(6,182,212,0.3); box-shadow: 0 0 20px rgba(6,182,212,0.08); }
+        .msg-ai.interactive::after { content: "tap to race"; display: block; font-size: 0.7rem; color: var(--accent); margin-top: 8px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.7; }
+        .typing-indicator { display: flex; gap: 6px; padding: 14px 18px; align-self: flex-start; }
+        .typing-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: dotBounce 1.4s infinite ease-in-out both; }
         .typing-dot:nth-child(2) { animation-delay: -0.16s; }
-        @keyframes typingBounce { 0%,80%,100% { transform: scale(0); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+        .typing-dot:nth-child(3) { animation-delay: -0.32s; }
+        .chat-input-wrap { display: flex; gap: 10px; padding: 12px; background: var(--bg-surface); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); }
+        .chat-input { flex: 1; background: transparent; border: none; outline: none; color: var(--text-main); font-family: 'Inter', sans-serif; font-size: 0.95rem; padding: 8px 12px; }
+        .chat-input::placeholder { color: var(--text-dim); }
+        .chat-send { background: var(--accent); color: var(--bg-base); border: none; border-radius: 12px; padding: 10px 20px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
+        .chat-send:hover { box-shadow: 0 0 20px var(--accent-glow); transform: scale(1.05); }
+        .chat-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+        .readonly-banner { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 16px; background: var(--bg-surface); border: 1px dashed rgba(255,255,255,0.1); border-radius: 16px; color: var(--text-dim); font-size: 0.82rem; text-align: center; }
 
-        /* Race Typing */
-        #typing-container { font-family: 'Fira Code', monospace; line-height: 1.6; --line-height: calc(1.65rem * 2.2); height: calc(3.5 * var(--line-height)); overflow-y: auto; padding: 1.25rem; border-radius: 16px; background: rgba(21,28,44,0.5); border: 1px solid rgba(255,255,255,0.06); scrollbar-width: thin; scrollbar-color: var(--accent) transparent; scroll-behavior: smooth; overscroll-behavior: contain; position: relative; }
+        /* countdown */
+        .countdown-overlay { position: fixed; inset: 0; z-index: 80; background: rgba(11,15,25,0.92); display: none; align-items: center; justify-content: center; backdrop-filter: blur(6px); }
+        .countdown-overlay.active { display: flex; }
+        .countdown-num { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 8rem; color: var(--text-main); text-shadow: 0 0 40px var(--accent-glow), 0 0 80px var(--accent-glow); animation: countPop 0.45s cubic-bezier(.34,1.56,.64,1); }
+        .countdown-num.go { color: #34D399; text-shadow: 0 0 40px rgba(52,211,153,0.7), 0 0 90px rgba(52,211,153,0.5); font-size: 5.5rem; letter-spacing: 4px; }
+        @keyframes countPop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* race screen */
+        #race-screen { justify-content: flex-start; padding-top: 78px; gap: 16px; }
+        .race-wrap { width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 14px; }
+        .hud { display: flex; flex-direction: column; gap: 9px; }
+        .hud-row { display: flex; align-items: center; gap: 12px; }
+        .hud-label { font-family: 'Orbitron', sans-serif; font-size: 0.62rem; letter-spacing: 2px; width: 50px; flex-shrink: 0; text-transform: uppercase; }
+        .hud-label.me { color: var(--accent); }
+        .hud-label.friend { color: var(--friend); }
+        .hud-track { flex: 1; height: 8px; border-radius: 99px; background: rgba(255,255,255,0.06); overflow: hidden; }
+        .hud-fill { height: 100%; border-radius: 99px; width: 0%; transition: width 0.15s linear; }
+        .hud-fill.me { background: linear-gradient(90deg,#06B6D4,#8B5CF6); box-shadow: 0 0 10px var(--accent-glow); }
+        .hud-fill.friend { background: linear-gradient(90deg,#FFD60A,#F5B700); box-shadow: 0 0 10px var(--friend-glow); }
+        .hud-wpm { font-family: 'Fira Code', monospace; font-size: 0.72rem; width: 58px; text-align: right; color: var(--text-dim); flex-shrink: 0; }
+        .race-stats { display: flex; justify-content: space-between; align-items: flex-end; height: 54px; padding: 0 4px; }
+        .stat-block { display: flex; flex-direction: column; }
+        .stat-label { font-size: 0.62rem; color: var(--text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; }
+        .stat-value { font-size: 2rem; font-weight: 900; line-height: 1; color: var(--text-main); letter-spacing: -0.5px; }
+        .stat-unit { font-size: 1.1rem; color: var(--text-dim); }
+        .forfeit-link { font-size: 0.7rem; color: var(--text-dim); text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0 0 4px 0; }
+        .forfeit-link:hover { color: var(--error-color); }
+        .waiting-banner { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; background: rgba(255,214,10,0.06); border: 1px solid rgba(255,214,10,0.2); border-radius: 12px; color: var(--friend); font-size: 0.8rem; font-weight: 600; }
+        .waiting-banner.hidden { display: none; }
+
+        #typing-container { font-family: 'Fira Code', monospace; line-height: 1.6; font-size: 1.5rem; --line-height: calc(1.5rem * 2.2); height: calc(3.2 * var(--line-height)); overflow-y: auto; padding: 1.1rem; border-radius: 16px; background: rgba(21,28,44,0.5); border: 1px solid rgba(255,255,255,0.06); scrollbar-width: thin; scrollbar-color: var(--accent) transparent; scroll-behavior: smooth; overscroll-behavior: contain; position: relative; cursor: text; }
         #typing-container::-webkit-scrollbar { width: 6px; }
         #typing-container::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
-        .char { white-space: pre; border-radius: 4px; transition: color 0.1s ease, background-color 0.1s ease; }
+        .char { white-space: pre; border-radius: 4px; transition: color 0.1s ease, background-color 0.1s ease, box-shadow 0.15s ease; }
         .char.untyped { color: var(--text-dim); }
         .char.correct { color: var(--text-main); text-shadow: 0 0 8px rgba(248,250,252,0.2); }
         .char.incorrect { color: var(--error-color); background-color: var(--error-bg); }
+        .char.opp-marker { box-shadow: inset 0 -3px 0 0 var(--friend), 0 2px 14px 0 var(--friend-glow); border-radius: 3px; }
         .caret { border-left: 2px solid var(--accent); box-shadow: -2px 0 8px var(--accent-glow); animation: blink 1s infinite cubic-bezier(0.4,0,0.2,1); }
         .caret-static { border-left: 2px solid var(--accent); box-shadow: -2px 0 8px var(--accent-glow); }
         @keyframes blink { 0%,100% { border-color: transparent; box-shadow: none; } 50% { border-color: var(--accent); box-shadow: -2px 0 8px var(--accent-glow); } }
-        .opponent-caret { border-bottom: 3px solid var(--yellow); box-shadow: 0 2px 10px var(--yellow-glow); animation: oppBlink 1s infinite cubic-bezier(0.4,0,0.2,1); }
-        @keyframes oppBlink { 0%,100% { border-bottom-color: transparent; box-shadow: none; } 50% { border-bottom-color: var(--yellow); box-shadow: 0 2px 10px var(--yellow-glow); } }
-
-        /* Countdown */
-        .countdown-overlay { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; z-index: 100; background: rgba(11,15,25,0.85); backdrop-filter: blur(4px); border-radius: 16px; }
-        .countdown-overlay.show { display: flex; }
-        .countdown-number { font-family: 'Orbitron', sans-serif; font-size: 6rem; font-weight: 900; color: var(--accent); text-shadow: 0 0 40px var(--accent-glow); animation: countPulse 0.8s ease-out; }
-        @keyframes countPulse { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.2); } 100% { transform: scale(1); opacity: 1; } }
-        .countdown-go { font-family: 'Orbitron', sans-serif; font-size: 4rem; font-weight: 900; color: var(--yellow); text-shadow: 0 0 40px var(--yellow-glow); animation: countPulse 0.6s ease-out; }
-
-        /* Results */
-        .results-overlay { position: fixed; inset: 0; z-index: 300; background: rgba(11,15,25,0.95); backdrop-filter: blur(12px); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 30px; }
-        .results-overlay.active { display: flex; }
-        .result-card { background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 28px 36px; min-width: 280px; text-align: center; transition: all 0.3s; }
-        .result-card.winner { border-color: var(--accent); box-shadow: 0 0 30px rgba(6,182,212,0.15); }
-        .result-card.loser { border-color: rgba(255,255,255,0.05); opacity: 0.8; }
-        .result-metric { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; font-weight: 900; }
-        .result-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 3px; margin-top: 4px; }
-        .winner-badge { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; color: var(--accent); letter-spacing: 4px; text-transform: uppercase; }
-
-        /* Misc */
+        .shake { animation: shakeError 0.3s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shakeError { 10%,90% { transform: translate3d(-1px,0,0); } 20%,80% { transform: translate3d(2px,0,0); } 30%,50%,70% { transform: translate3d(-3px,0,0); } 40%,60% { transform: translate3d(3px,0,0); } }
         #mobile-input-target { position: absolute; opacity: 0; top: 0; left: 0; height: 100%; width: 100%; z-index: -1; pointer-events: none; }
-        .text-display { display: flex; flex-wrap; pointer-events: none; }
-        .start-btn { font-family: 'Orbitron', sans-serif; font-size: 13px; letter-spacing: 3px; background: var(--accent); color: var(--bg-base); border: none; padding: 14px 40px; border-radius: 10px; cursor: pointer; font-weight: 700; transition: all 0.3s; text-transform: uppercase; }
-        .start-btn:hover:not(:disabled) { box-shadow: 0 0 30px var(--accent-glow); transform: scale(1.05); }
-        .start-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .back-btn { position: fixed; top: 20px; left: 20px; z-index: 110; padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: var(--bg-surface); color: var(--text-dim); font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
-        .back-btn:hover { color: var(--text-main); border-color: rgba(255,255,255,0.2); }
+        #focus-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 16px; transition: opacity 0.3s ease; }
+        #focus-overlay.hidden { display: none; }
+
+        /* results */
+        .result-banner { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.9rem; text-align: center; letter-spacing: 1px; }
+        .result-banner.win { color: #34D399; text-shadow: 0 0 30px rgba(52,211,153,0.4); }
+        .result-banner.lose { color: var(--text-dim); }
+        .result-cards { display: flex; gap: 16px; width: 100%; max-width: 520px; flex-wrap: wrap; justify-content: center; }
+        .result-card { flex: 1; min-width: 190px; background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .result-card.winner.me { border-color: rgba(6,182,212,0.4); box-shadow: 0 0 30px rgba(6,182,212,0.12); }
+        .result-card.winner.friend { border-color: rgba(255,214,10,0.4); box-shadow: 0 0 30px rgba(255,214,10,0.12); }
+        .result-name { font-family: 'Orbitron', sans-serif; font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; }
+        .result-name.me { color: var(--accent); }
+        .result-name.friend { color: var(--friend); }
+        .result-metric { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-dim); }
+        .result-metric b { color: var(--text-main); font-size: 1rem; }
+        .result-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
     </style>
 </head>
-<body class="min-h-screen relative">
-    <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#06B6D4] opacity-[0.03] rounded-full blur-[100px] pointer-events-none"></div>
-    <div class="scanline"></div>
+<body>
+    <div class="bg-glow"></div>
     <canvas id="thunder-canvas"></canvas>
+    <div class="scanline"></div>
+    <div class="toast" id="toast"></div>
 
-    <!-- PASSWORD SCREEN -->
-    <div class="screen password-screen active" id="password-screen">
+    <div class="status-bar hidden" id="status-bar">
+        <a href="index.html" class="back-link">&#8249; FLUIDTYPE</a>
+        <div class="conn-pill" id="conn-pill"><span class="conn-dot"></span><span id="conn-label">CONNECTED</span></div>
+    </div>
+
+    <!-- LOBBY -->
+    <div class="screen active" id="lobby-screen">
         <h1 class="text-3xl font-extrabold tracking-tight">FLUID<span class="gradient-text">TYPE</span></h1>
-        <div class="password-label">Enter Access Code</div>
-        <input type="password" class="password-input" id="password-input" maxlength="6" placeholder="&#8226;&#8226;&#8226;&#8226;" autocomplete="off">
-        <div class="password-error" id="password-error">Access Denied</div>
+        <div class="field-label">Race Mode</div>
+        <p class="text-[#475569] text-sm max-w-xs text-center leading-relaxed">Challenge a friend to a live typing duel. No servers, no signup &mdash; just a 4-digit code.</p>
+        <button class="menu-btn" id="create-room-btn">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            CREATE ROOM
+        </button>
+        <button class="menu-btn" id="join-room-btn">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+            JOIN ROOM
+        </button>
+        <a href="index.html" class="back-link mt-2">&#8249; Back to FluidType</a>
     </div>
 
-    <!-- LOBBY SCREEN -->
-    <div class="screen lobby-screen" id="lobby-screen">
-        <h1 class="text-3xl font-extrabold tracking-tight">FLUID<span class="gradient-text">TYPE</span><span class="text-xs text-[#475569] font-normal ml-2 tracking-widest">RACE</span></h1>
-        <p class="text-[#475569] text-sm max-w-md text-center leading-relaxed">Challenge a friend to a real-time typing duel. Create a room or join one with a 4-digit code.</p>
-        <div class="flex flex-col gap-4 items-center">
-            <button class="lobby-btn" id="create-room-btn">Create Room</button>
-            <button class="lobby-btn yellow" id="join-room-btn">Join Room</button>
-        </div>
-        <a href="index.html" class="text-[#475569] text-xs hover:text-[#06B6D4] transition-colors mt-4">&larr; Back to Solo Mode</a>
+    <!-- JOIN CODE ENTRY -->
+    <div class="screen" id="join-screen">
+        <div class="field-label">Enter Room Code</div>
+        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" class="code-input" id="join-code-input" placeholder="&#8226;&#8226;&#8226;&#8226;" autocomplete="off">
+        <div class="field-error" id="join-error">Room not found</div>
+        <button class="menu-btn" id="join-connect-btn">CONNECT</button>
+        <button class="menu-btn ghost" id="join-back-btn">BACK</button>
     </div>
 
-    <!-- HOST LOBBY -->
-    <div class="screen host-lobby-screen" id="host-lobby-screen">
-        <button class="back-btn" id="host-back-btn">&larr; Leave</button>
-        <div class="text-center">
-            <div class="password-label mb-3">Your Room Code</div>
-            <div class="room-code" id="host-room-code">----</div>
-            <div class="text-[#475569] text-sm mt-3" id="host-status">Waiting for friend...</div>
+    <!-- HOST WAITING -->
+    <div class="screen" id="waiting-screen">
+        <div class="field-label">Your Room Code</div>
+        <div class="flex items-center gap-3">
+            <div class="room-code-box" id="room-code-display">----</div>
+            <button class="copy-btn" id="copy-code-btn">COPY</button>
         </div>
-        <div class="w-full flex flex-col gap-3">
-            <div class="player-slot active" id="host-slot">
-                <div class="status-dot online"></div>
-                <div><div class="text-sm font-bold">You (Host)</div><div class="text-xs text-[#475569]">Connected</div></div>
-            </div>
-            <div class="player-slot" id="guest-slot">
-                <div class="status-dot" id="guest-dot"></div>
-                <div><div class="text-sm font-bold">Friend</div><div class="text-xs text-[#475569]" id="guest-status">Not connected</div></div>
-            </div>
-        </div>
-        <div class="w-full glass-panel rounded-2xl p-4 flex flex-col gap-3" style="max-height: 320px;">
-            <div class="text-xs text-[#475569] font-bold uppercase tracking-widest">Chat & Text Selection</div>
-            <div class="chat-messages" id="host-chat-messages">
-                <div class="msg-bubble msg-ai">Welcome! Ask the AI about any topic. When you get a response, click "Use for Race" to lock it in as the target text.</div>
-            </div>
-            <div class="flex gap-2">
-                <input type="text" class="flex-1 bg-transparent border border-white/10 rounded-lg px-4 py-2 text-sm outline-none focus:border-[#06B6D4] transition-colors" id="host-chat-input" placeholder="Ask about AI, tech, space...">
-                <button class="px-4 py-2 rounded-lg bg-[#06B6D4] text-[#0B0F19] font-bold text-sm hover:shadow-lg hover:shadow-[#06B6D4]/20 transition-all" id="host-chat-send">Send</button>
-            </div>
-        </div>
-        <div class="w-full glass-panel rounded-2xl p-4" id="locked-text-panel" style="display:none;">
-            <div class="text-xs text-[#475569] font-bold uppercase tracking-widest mb-2">Locked Race Text</div>
-            <div class="text-sm text-[#F8FAFC] leading-relaxed opacity-80" id="locked-text-preview"></div>
-        </div>
-        <button class="start-btn" id="start-race-btn" disabled>Start Race</button>
+        <p class="text-[#475569] text-sm text-center max-w-xs leading-relaxed">Send this code to your friend. Once they join, you'll pick the race text together.</p>
+        <div class="wait-dots"><div class="wait-dot"></div><div class="wait-dot"></div><div class="wait-dot"></div></div>
+        <button class="menu-btn ghost" id="waiting-cancel-btn">CANCEL</button>
     </div>
 
-    <!-- JOIN LOBBY -->
-    <div class="screen join-lobby-screen" id="join-lobby-screen">
-        <button class="back-btn" id="join-back-btn">&larr; Back</button>
-        <div class="text-center" id="join-code-section">
-            <div class="password-label mb-3">Enter Room Code</div>
-            <input type="text" class="code-input" id="join-code-input" maxlength="4" placeholder="0000" autocomplete="off" inputmode="numeric">
-            <div class="password-error" id="join-error" style="margin-top:12px;">Invalid Code</div>
-            <button class="lobby-btn mt-6" id="connect-btn" style="min-width:180px;padding:14px 32px;">Connect</button>
-        </div>
-        <div class="text-center hidden" id="join-waiting-section">
-            <div class="room-code" style="font-size:2rem;letter-spacing:4px;">CONNECTED</div>
-            <div class="text-[#475569] text-sm mt-3">Waiting for host to select a topic...</div>
-            <div class="w-full glass-panel rounded-2xl p-4 mt-6 text-left">
-                <div class="text-xs text-[#475569] font-bold uppercase tracking-widest mb-2">Host Chat (Read-Only)</div>
-                <div class="chat-messages" id="join-chat-messages" style="max-height:200px;"></div>
+    <!-- CONNECTING (guest) -->
+    <div class="screen" id="connecting-screen">
+        <div class="spinner"></div>
+        <div class="field-label">Connecting to <span id="connecting-code">----</span></div>
+        <button class="menu-btn ghost" id="connecting-cancel-btn">CANCEL</button>
+    </div>
+
+    <!-- SETUP / CHAT -->
+    <div class="screen" id="setup-screen">
+        <div class="setup-wrap">
+            <div class="flex flex-col items-center gap-2">
+                <div class="text-xs text-[#475569] font-bold uppercase tracking-widest text-center" id="role-banner">You are the host</div>
+                <div class="diff-selector hidden" id="diff-selector">
+                    <button data-level="1" class="diff-btn active">a-z</button>
+                    <button data-level="2" class="diff-btn">A-Z</button>
+                    <button data-level="3" class="diff-btn">A-Z + !?</button>
+                </div>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <div class="msg-bubble msg-ai">Ask about any topic &mdash; the paragraph I generate becomes your race text. Tap a response to lock it in and start the countdown!</div>
+            </div>
+            <div class="chat-input-wrap hidden" id="chat-input-wrap">
+                <input type="text" class="chat-input" id="chat-input" placeholder="Ask about AI, tech, space..." autocomplete="off">
+                <button class="chat-send" id="chat-send">Send</button>
+            </div>
+            <div class="readonly-banner hidden" id="readonly-banner">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                Watching your host pick a topic &mdash; the race starts automatically.
             </div>
         </div>
     </div>
 
-    <!-- RACE SCREEN -->
-    <div class="screen race-screen" id="race-screen">
-        <div class="w-full max-w-[900px] mx-auto p-4 sm:p-6 flex flex-col gap-4 h-full">
-            <header class="flex justify-between items-center pb-3 border-b border-white/5">
-                <h1 class="text-xl font-extrabold tracking-tight">FLUID<span class="gradient-text">TYPE</span><span class="text-xs text-[#475569] font-normal ml-2 tracking-widest">RACE</span></h1>
-                <div class="flex items-center gap-4">
-                    <div class="flex items-center gap-2">
-                        <div class="w-2 h-2 rounded-full bg-[#06B6D4] shadow-[0_0_8px_#06B6D4]"></div>
-                        <span class="text-xs text-[#475569] uppercase tracking-wider">You</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="w-2 h-2 rounded-full bg-[#FCD34D] shadow-[0_0_8px_#FCD34D]"></div>
-                        <span class="text-xs text-[#475569] uppercase tracking-wider">Friend</span>
-                    </div>
+    <!-- COUNTDOWN -->
+    <div class="countdown-overlay" id="countdown-overlay">
+        <div class="countdown-num" id="countdown-num">3</div>
+    </div>
+
+    <!-- RACE -->
+    <div class="screen" id="race-screen">
+        <div class="race-wrap">
+            <div class="hud">
+                <div class="hud-row">
+                    <span class="hud-label me">YOU</span>
+                    <div class="hud-track"><div class="hud-fill me" id="my-bar"></div></div>
+                    <span class="hud-wpm" id="my-wpm-badge">0 wpm</span>
                 </div>
-            </header>
-            <div class="flex justify-between items-end px-2">
-                <div class="flex gap-6 sm:gap-10">
-                    <div class="flex flex-col"><span class="text-[10px] sm:text-xs text-[#475569] font-bold uppercase tracking-widest mb-1">WPM</span><span class="text-3xl sm:text-4xl font-black leading-none text-white tracking-tight" id="wpm">0</span></div>
-                    <div class="flex flex-col"><span class="text-[10px] sm:text-xs text-[#475569] font-bold uppercase tracking-widest mb-1">Accuracy</span><span class="text-3xl sm:text-4xl font-black leading-none text-white tracking-tight"><span id="accuracy">100</span><span class="text-xl sm:text-2xl text-[#475569]">%</span></span></div>
-                    <div class="flex flex-col"><span class="text-[10px] sm:text-xs text-[#475569] font-bold uppercase tracking-widest mb-1">Progress</span><span class="text-3xl sm:text-4xl font-black leading-none text-white tracking-tight"><span id="progress">0</span><span class="text-xl sm:text-2xl text-[#475569]">%</span></span></div>
-                </div>
-                <div class="text-right">
-                    <div class="text-[10px] sm:text-xs text-[#475569] font-bold uppercase tracking-widest mb-1">Opponent</div>
-                    <div class="text-2xl sm:text-3xl font-black leading-none text-[#FCD34D] tracking-tight"><span id="opp-progress">0</span><span class="text-lg sm:text-xl text-[#475569]">%</span></div>
+                <div class="hud-row">
+                    <span class="hud-label friend">FRIEND</span>
+                    <div class="hud-track"><div class="hud-fill friend" id="opp-bar"></div></div>
+                    <span class="hud-wpm" id="opp-wpm-badge">0 wpm</span>
                 </div>
             </div>
-            <div id="typing-container" class="relative w-full text-[1.4rem] sm:text-[1.65rem] leading-[2.2] cursor-text select-none focus:outline-none flex-1" tabindex="0">
-                <textarea id="mobile-input-target" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
-                <div id="text-display" class="text-display"></div>
-                <div id="countdown-overlay" class="countdown-overlay">
-                    <div class="countdown-number" id="countdown-number">3</div>
-                </div>
-                <div id="focus-overlay" class="absolute inset-0 glass-panel rounded-2xl flex items-center justify-center transition-opacity duration-300 hidden">
+            <div class="race-stats">
+                <div class="stat-block"><span class="stat-label">WPM</span><span class="stat-value" id="wpm">0</span></div>
+                <div class="stat-block"><span class="stat-label">Accuracy</span><span class="stat-value"><span id="accuracy">100</span><span class="stat-unit">%</span></span></div>
+                <div class="stat-block"><span class="stat-label">Progress</span><span class="stat-value"><span id="progress">0</span><span class="stat-unit">%</span></span></div>
+                <button class="forfeit-link" id="forfeit-btn">give up</button>
+            </div>
+            <div class="waiting-banner hidden" id="waiting-finish-banner">Nice! Waiting for your friend to finish&hellip;</div>
+            <div id="typing-container" tabindex="0">
+                <textarea id="mobile-input-target" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" disabled></textarea>
+                <div id="text-display" class="flex flex-wrap pointer-events-none"></div>
+                <div id="focus-overlay" class="glass-panel hidden">
                     <span class="text-white font-medium flex items-center gap-3 px-6 py-3 rounded-full bg-white/5 border border-white/10">
                         <svg class="w-5 h-5 text-[#06B6D4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
                         Tap to engage
@@ -233,717 +273,821 @@
         </div>
     </div>
 
-    <!-- RESULTS OVERLAY -->
-    <div class="results-overlay" id="results-overlay">
-        <h2 class="text-3xl font-extrabold tracking-tight">RACE <span class="gradient-text-yellow">COMPLETE</span></h2>
-        <div class="winner-badge" id="winner-badge">Calculating...</div>
-        <div class="flex flex-col sm:flex-row gap-6 w-full max-w-[600px] justify-center px-4">
-            <div class="result-card winner" id="local-result">
-                <div class="text-xs text-[#06B6D4] font-bold uppercase tracking-widest mb-3">You</div>
-                <div class="flex justify-around">
-                    <div><div class="result-metric text-[#06B6D4]" id="local-wpm">0</div><div class="result-label">WPM</div></div>
-                    <div><div class="result-metric" id="local-acc">0%</div><div class="result-label">Accuracy</div></div>
-                    <div><div class="result-metric" id="local-time">0s</div><div class="result-label">Time</div></div>
-                </div>
+    <!-- RESULTS -->
+    <div class="screen" id="results-screen">
+        <div class="result-banner" id="result-banner">YOU WIN!</div>
+        <div class="result-cards">
+            <div class="result-card" id="my-result-card">
+                <div class="result-name me">YOU</div>
+                <div class="result-metric"><span>WPM</span><b id="res-my-wpm">0</b></div>
+                <div class="result-metric"><span>Accuracy</span><b id="res-my-acc">0%</b></div>
+                <div class="result-metric"><span>Time</span><b id="res-my-time">0s</b></div>
             </div>
-            <div class="result-card" id="opp-result">
-                <div class="text-xs text-[#FCD34D] font-bold uppercase tracking-widest mb-3">Friend</div>
-                <div class="flex justify-around">
-                    <div><div class="result-metric text-[#FCD34D]" id="opp-wpm">0</div><div class="result-label">WPM</div></div>
-                    <div><div class="result-metric" id="opp-acc">0%</div><div class="result-label">Accuracy</div></div>
-                    <div><div class="result-metric" id="opp-time">0s</div><div class="result-label">Time</div></div>
-                </div>
+            <div class="result-card" id="opp-result-card">
+                <div class="result-name friend">FRIEND</div>
+                <div class="result-metric"><span>WPM</span><b id="res-opp-wpm">0</b></div>
+                <div class="result-metric"><span>Accuracy</span><b id="res-opp-acc">0%</b></div>
+                <div class="result-metric"><span>Time</span><b id="res-opp-time">0s</b></div>
             </div>
         </div>
-        <div class="flex gap-4">
-            <button class="lobby-btn" id="race-again-btn" onclick="location.reload()">Race Again</button>
-            <a href="index.html" class="lobby-btn yellow" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">Menu</a>
+        <div class="result-actions">
+            <button class="menu-btn" id="rematch-btn">RACE AGAIN</button>
+            <div class="text-xs text-[#475569] hidden" id="guest-rematch-note">Ask your host for a rematch</div>
+            <button class="menu-btn ghost" id="exit-room-btn">EXIT ROOM</button>
         </div>
     </div>
 
     <script>
-        /* ==========================================================
-           RACE STATE & CONFIG
-           ========================================================== */
-        const RACE = {
-            peer: null,
-            conn: null,
-            isHost: false,
-            roomCode: null,
-            status: 'password',
-            targetText: '',
-            charArray: [],
-            localIndex: 0,
-            localTyped: [],
-            localStartTime: null,
-            localEndTime: null,
-            localCorrect: 0,
-            localTotal: 0,
-            localFinished: false,
-            opponentIndex: -1,
-            opponentFinished: false,
-            opponentMetrics: null,
-            timerActive: false,
-            isBlocked: false,
-            selectedProvider: 'auto',
-            raceStarted: false,
-            countdownActive: false
-        };
+        const ROOM_PREFIX = 'ft-race-';
 
-        const PEER_CONFIG = {
-            host: '0.peerjs.com',
-            port: 443,
-            secure: true,
-            debug: 1,
-            config: {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' }
-                ]
-            }
+        const state = {
+            peer: null, conn: null, isHost: false, roomCode: null, connected: false, joining: false, raceStarting: false,
+            rawText: '', charArray: [], difficulty: 1,
+            typedArray: [], currentIndex: 0, startTime: null, timerActive: false,
+            totalKeystrokes: 0, correctKeystrokes: 0, isTypingStarted: false, isBlocked: false,
+            finished: false, myResult: null, oppResult: null, oppIndex: -1, oppWpm: 0,
+            selectedProvider: 'auto'
         };
 
         const els = {
-            passwordScreen: document.getElementById('password-screen'),
-            passwordInput: document.getElementById('password-input'),
-            passwordError: document.getElementById('password-error'),
+            toast: document.getElementById('toast'),
+            statusBar: document.getElementById('status-bar'),
+            connPill: document.getElementById('conn-pill'),
+            connLabel: document.getElementById('conn-label'),
+
             lobbyScreen: document.getElementById('lobby-screen'),
             createRoomBtn: document.getElementById('create-room-btn'),
             joinRoomBtn: document.getElementById('join-room-btn'),
-            hostLobby: document.getElementById('host-lobby-screen'),
-            hostRoomCode: document.getElementById('host-room-code'),
-            hostStatus: document.getElementById('host-status'),
-            hostBackBtn: document.getElementById('host-back-btn'),
-            guestSlot: document.getElementById('guest-slot'),
-            guestDot: document.getElementById('guest-dot'),
-            guestStatus: document.getElementById('guest-status'),
-            hostChatMessages: document.getElementById('host-chat-messages'),
-            hostChatInput: document.getElementById('host-chat-input'),
-            hostChatSend: document.getElementById('host-chat-send'),
-            lockedTextPanel: document.getElementById('locked-text-panel'),
-            lockedTextPreview: document.getElementById('locked-text-preview'),
-            startRaceBtn: document.getElementById('start-race-btn'),
-            joinLobby: document.getElementById('join-lobby-screen'),
-            joinCodeSection: document.getElementById('join-code-section'),
-            joinWaitingSection: document.getElementById('join-waiting-section'),
+
+            joinScreen: document.getElementById('join-screen'),
             joinCodeInput: document.getElementById('join-code-input'),
             joinError: document.getElementById('join-error'),
-            connectBtn: document.getElementById('connect-btn'),
+            joinConnectBtn: document.getElementById('join-connect-btn'),
             joinBackBtn: document.getElementById('join-back-btn'),
-            joinChatMessages: document.getElementById('join-chat-messages'),
+
+            waitingScreen: document.getElementById('waiting-screen'),
+            roomCodeDisplay: document.getElementById('room-code-display'),
+            copyCodeBtn: document.getElementById('copy-code-btn'),
+            waitingCancelBtn: document.getElementById('waiting-cancel-btn'),
+
+            connectingScreen: document.getElementById('connecting-screen'),
+            connectingCode: document.getElementById('connecting-code'),
+            connectingCancelBtn: document.getElementById('connecting-cancel-btn'),
+
+            setupScreen: document.getElementById('setup-screen'),
+            roleBanner: document.getElementById('role-banner'),
+            diffSelector: document.getElementById('diff-selector'),
+            diffButtons: document.querySelectorAll('.diff-btn'),
+            chatMessages: document.getElementById('chat-messages'),
+            chatInputWrap: document.getElementById('chat-input-wrap'),
+            chatInput: document.getElementById('chat-input'),
+            chatSend: document.getElementById('chat-send'),
+            readonlyBanner: document.getElementById('readonly-banner'),
+
+            countdownOverlay: document.getElementById('countdown-overlay'),
+            countdownNum: document.getElementById('countdown-num'),
+
             raceScreen: document.getElementById('race-screen'),
+            myBar: document.getElementById('my-bar'),
+            myWpmBadge: document.getElementById('my-wpm-badge'),
+            oppBar: document.getElementById('opp-bar'),
+            oppWpmBadge: document.getElementById('opp-wpm-badge'),
+            wpm: document.getElementById('wpm'),
+            accuracy: document.getElementById('accuracy'),
+            progress: document.getElementById('progress'),
+            forfeitBtn: document.getElementById('forfeit-btn'),
+            waitingFinishBanner: document.getElementById('waiting-finish-banner'),
             container: document.getElementById('typing-container'),
             display: document.getElementById('text-display'),
             mobileInput: document.getElementById('mobile-input-target'),
             focusOverlay: document.getElementById('focus-overlay'),
-            countdownOverlay: document.getElementById('countdown-overlay'),
-            countdownNumber: document.getElementById('countdown-number'),
-            wpm: document.getElementById('wpm'),
-            accuracy: document.getElementById('accuracy'),
-            progress: document.getElementById('progress'),
-            oppProgress: document.getElementById('opp-progress'),
-            resultsOverlay: document.getElementById('results-overlay'),
-            winnerBadge: document.getElementById('winner-badge'),
-            localResult: document.getElementById('local-result'),
-            oppResult: document.getElementById('opp-result'),
-            localWpm: document.getElementById('local-wpm'),
-            localAcc: document.getElementById('local-acc'),
-            localTime: document.getElementById('local-time'),
-            oppWpm: document.getElementById('opp-wpm'),
-            oppAcc: document.getElementById('opp-acc'),
-            oppTime: document.getElementById('opp-time'),
-            thunderCanvas: document.getElementById('thunder-canvas')
+            thunderCanvas: document.getElementById('thunder-canvas'),
+
+            resultsScreen: document.getElementById('results-screen'),
+            resultBanner: document.getElementById('result-banner'),
+            myResultCard: document.getElementById('my-result-card'),
+            oppResultCard: document.getElementById('opp-result-card'),
+            resMyWpm: document.getElementById('res-my-wpm'),
+            resMyAcc: document.getElementById('res-my-acc'),
+            resMyTime: document.getElementById('res-my-time'),
+            resOppWpm: document.getElementById('res-opp-wpm'),
+            resOppAcc: document.getElementById('res-opp-acc'),
+            resOppTime: document.getElementById('res-opp-time'),
+            rematchBtn: document.getElementById('rematch-btn'),
+            guestRematchNote: document.getElementById('guest-rematch-note'),
+            exitRoomBtn: document.getElementById('exit-room-btn')
         };
 
-        /* ==========================================================
-           SCREEN NAVIGATION
-           ========================================================== */
-        function showScreen(name) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            if (name === 'password') els.passwordScreen.classList.add('active');
-            if (name === 'lobby') els.lobbyScreen.classList.add('active');
-            if (name === 'host') els.hostLobby.classList.add('active');
-            if (name === 'join') els.joinLobby.classList.add('active');
-            if (name === 'race') els.raceScreen.classList.add('active');
-            RACE.status = name;
-        }
-
-        /* ==========================================================
-           PASSWORD
-           ========================================================== */
-        els.passwordInput.addEventListener('input', (e) => {
-            const val = e.target.value;
-            els.passwordError.classList.remove('show');
-            if (val === '1911') {
-                setTimeout(() => {
-                    els.passwordScreen.classList.add('hidden');
-                    showScreen('lobby');
-                }, 400);
-            } else if (val.length >= 4) {
-                els.passwordError.classList.add('show');
-                els.passwordInput.value = '';
-                els.passwordInput.classList.add('shake');
-                setTimeout(() => els.passwordInput.classList.remove('shake'), 300);
-            }
-        });
-
-        /* ==========================================================
-           PEERJS CONNECTION HANDLERS
-           ========================================================== */
-        function generateRoomCode() {
-            return Math.floor(1000 + Math.random() * 9000).toString();
-        }
-
-        function sendData(data) {
-            if (RACE.conn && RACE.conn.open) {
-                RACE.conn.send(data);
-            }
-        }
-
-        function initHost() {
-            RACE.isHost = true;
-            RACE.roomCode = generateRoomCode();
-            const peerId = 'fluidtype-' + RACE.roomCode;
-            els.hostRoomCode.textContent = RACE.roomCode;
-            showScreen('host');
-
-            RACE.peer = new Peer(peerId, PEER_CONFIG);
-
-            RACE.peer.on('open', () => {
-                els.hostStatus.textContent = 'Room created. Waiting for friend...';
-            });
-
-            RACE.peer.on('connection', (conn) => {
-                RACE.conn = conn;
-                setupConnectionHandlers();
-            });
-
-            RACE.peer.on('error', (err) => {
-                console.error('Peer error:', err);
-                if (err.type === 'unavailable-id') {
-                    RACE.roomCode = generateRoomCode();
-                    els.hostRoomCode.textContent = RACE.roomCode;
-                    RACE.peer = new Peer('fluidtype-' + RACE.roomCode, PEER_CONFIG);
-                } else {
-                    els.hostStatus.textContent = 'Connection error. Try again.';
-                }
-            });
-        }
-
-        function initJoin(code) {
-            RACE.isHost = false;
-            RACE.roomCode = code;
-            showScreen('join');
-
-            RACE.peer = new Peer(PEER_CONFIG);
-
-            RACE.peer.on('open', () => {
-                const conn = RACE.peer.connect('fluidtype-' + code, { reliable: true });
-                RACE.conn = conn;
-                setupConnectionHandlers();
-            });
-
-            RACE.peer.on('error', (err) => {
-                console.error('Peer error:', err);
-                els.joinError.textContent = 'Could not connect. Check code and try again.';
-                els.joinError.classList.add('show');
-            });
-        }
-
-        function setupConnectionHandlers() {
-            RACE.conn.on('open', () => {
-                if (RACE.isHost) {
-                    els.hostStatus.textContent = 'Friend connected! Chat to pick a topic.';
-                    els.guestDot.classList.add('online');
-                    els.guestSlot.classList.add('opponent-active');
-                    els.guestStatus.textContent = 'Connected';
-                } else {
-                    els.joinCodeSection.classList.add('hidden');
-                    els.joinWaitingSection.classList.remove('hidden');
-                    els.joinWaitingSection.classList.add('flex');
-                }
-            });
-
-            RACE.conn.on('data', (data) => {
-                handlePeerData(data);
-            });
-
-            RACE.conn.on('close', () => {
-                if (RACE.isHost) {
-                    els.hostStatus.textContent = 'Friend disconnected.';
-                    els.guestDot.classList.remove('online');
-                    els.guestSlot.classList.remove('opponent-active');
-                    els.guestStatus.textContent = 'Disconnected';
-                    els.startRaceBtn.disabled = true;
-                } else {
-                    alert('Host disconnected. Returning to lobby.');
-                    location.reload();
-                }
-            });
-
-            RACE.conn.on('error', (err) => {
-                console.error('Connection error:', err);
-            });
-        }
-
-        function handlePeerData(data) {
-            if (!data || !data.type) return;
-
-            switch (data.type) {
-                case 'chat':
-                    addChatMessage(data.text, data.role, RACE.isHost ? els.hostChatMessages : els.joinChatMessages, false);
-                    break;
-                case 'text':
-                    lockRaceText(data.text);
-                    break;
-                case 'start_countdown':
-                    beginCountdown();
-                    break;
-                case 'countdown':
-                    showCountdownNumber(data.value);
-                    break;
-                case 'go':
-                    startRaceTyping();
-                    break;
-                case 'progress':
-                    updateOpponentProgress(data.index);
-                    break;
-                case 'finished':
-                    RACE.opponentFinished = true;
-                    RACE.opponentMetrics = data;
-                    checkRaceComplete();
-                    break;
-            }
-        }
-
-        /* ==========================================================
-           LOBBY BUTTONS
-           ========================================================== */
-        els.createRoomBtn.addEventListener('click', initHost);
-        els.joinRoomBtn.addEventListener('click', () => showScreen('join'));
-        els.hostBackBtn.addEventListener('click', () => location.reload());
-        els.joinBackBtn.addEventListener('click', () => location.reload());
-
-        els.connectBtn.addEventListener('click', () => {
-            const code = els.joinCodeInput.value.trim();
-            if (code.length === 4 && /^\d{4}$/.test(code)) {
-                els.joinError.classList.remove('show');
-                initJoin(code);
-            } else {
-                els.joinError.textContent = 'Enter a valid 4-digit code';
-                els.joinError.classList.add('show');
-                els.joinCodeInput.classList.add('shake');
-                setTimeout(() => els.joinCodeInput.classList.remove('shake'), 300);
-            }
-        });
-
-        els.joinCodeInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') els.connectBtn.click();
-        });
-
-        /* ==========================================================
-           CHAT (Host Only + Sync to Guest)
-           ========================================================== */
+        /* ============ UTIL ============ */
         function sanitizeText(text) {
             if (!text) return '';
             return text
-                .replace(/[—–]/g, '-')
-                .replace(/[‘’]/g, "'")
-                .replace(/[“”]/g, '"')
-                .replace(/…/g, '...')
+                .replace(/[\u2014\u2013]/g, '-')
+                .replace(/[\u2018\u2019]/g, "'")
+                .replace(/[\u201C\u201D]/g, '"')
+                .replace(/\u2026/g, '...')
                 .replace(/[^\x20-\x7E]/g, '')
                 .replace(/\s+/g, ' ')
                 .trim();
         }
 
-        function addChatMessage(text, role, container, isHostMsg) {
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        let toastTimer = null;
+        function showToast(msg, duration) {
+            els.toast.textContent = msg;
+            els.toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => els.toast.classList.remove('show'), duration || 3200);
+        }
+
+        function cleanupPeer() {
+            try { if (state.conn) state.conn.close(); } catch (e) {}
+            try { if (state.peer) state.peer.destroy(); } catch (e) {}
+            state.conn = null; state.peer = null; state.connected = false;
+        }
+
+        function teardownAndGoLobby() {
+            cleanupPeer();
+            els.statusBar.classList.add('hidden');
+            state.isHost = false; state.roomCode = null;
+            showScreen('lobby-screen');
+        }
+
+        /* ============ LOBBY / CONNECTION ============ */
+        els.createRoomBtn.addEventListener('click', () => createRoom());
+        els.joinRoomBtn.addEventListener('click', () => {
+            els.joinCodeInput.value = '';
+            els.joinError.classList.remove('show');
+            showScreen('join-screen');
+            setTimeout(() => els.joinCodeInput.focus(), 200);
+        });
+        els.joinBackBtn.addEventListener('click', () => showScreen('lobby-screen'));
+        els.waitingCancelBtn.addEventListener('click', () => teardownAndGoLobby());
+        els.connectingCancelBtn.addEventListener('click', () => teardownAndGoLobby());
+        els.exitRoomBtn.addEventListener('click', () => teardownAndGoLobby());
+
+        function createRoom(attempt) {
+            attempt = attempt || 0;
+            state.isHost = true;
+            cleanupPeer();
+            const code = String(Math.floor(1000 + Math.random() * 9000));
+            state.roomCode = code;
+            els.roomCodeDisplay.textContent = code;
+            showScreen('waiting-screen');
+
+            state.peer = new Peer(ROOM_PREFIX + code);
+            state.peer.on('connection', conn => {
+                if (state.conn && state.conn.open) { conn.close(); return; }
+                wireConnection(conn);
+            });
+            state.peer.on('error', err => {
+                if (err.type === 'unavailable-id' && attempt < 5) { createRoom(attempt + 1); return; }
+                showToast('Could not open a room. Check your connection.');
+                showScreen('lobby-screen');
+            });
+        }
+
+        els.joinCodeInput.addEventListener('input', e => {
+            const v = e.target.value.replace(/\D/g, '').slice(0, 4);
+            e.target.value = v;
+            els.joinError.classList.remove('show');
+            if (v.length === 4) setTimeout(() => joinRoom(), 150);
+        });
+        els.joinConnectBtn.addEventListener('click', () => joinRoom());
+
+        function joinRoom() {
+            if (state.joining) return;
+            const code = els.joinCodeInput.value.trim();
+            if (!/^\d{4}$/.test(code)) {
+                els.joinError.textContent = 'Enter a valid 4-digit code';
+                els.joinError.classList.add('show');
+                return;
+            }
+            state.joining = true;
+            state.isHost = false;
+            state.roomCode = code;
+            els.connectingCode.textContent = code;
+            showScreen('connecting-screen');
+            cleanupPeer();
+
+            state.peer = new Peer();
+            let settled = false;
+            const failSafe = setTimeout(() => {
+                if (settled) return;
+                settled = true;
+                state.joining = false;
+                cleanupPeer();
+                showScreen('join-screen');
+                els.joinError.textContent = 'Could not reach that room. Check the code.';
+                els.joinError.classList.add('show');
+            }, 12000);
+
+            state.peer.on('open', () => {
+                const conn = state.peer.connect(ROOM_PREFIX + code, { reliable: true });
+                wireConnection(conn);
+                conn.on('open', () => {
+                    if (settled) return;
+                    settled = true;
+                    clearTimeout(failSafe);
+                    state.joining = false;
+                });
+            });
+            state.peer.on('error', err => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(failSafe);
+                state.joining = false;
+                cleanupPeer();
+                showScreen('join-screen');
+                els.joinError.textContent = (err.type === 'peer-unavailable') ? 'Room not found. Check the code.' : 'Connection error. Try again.';
+                els.joinError.classList.add('show');
+            });
+        }
+
+        function wireConnection(conn) {
+            state.conn = conn;
+            conn.on('open', () => {
+                state.connected = true;
+                if (state.isHost) {
+                    showToast('\ud83c\udf89 Your friend joined the race!');
+                    setTimeout(enterSetup, 700);
+                } else {
+                    showToast('Connected to host!');
+                    enterSetup();
+                }
+            });
+            conn.on('data', handlePeerData);
+            conn.on('close', handlePeerDisconnect);
+            conn.on('error', () => {});
+        }
+
+        function handlePeerDisconnect() {
+            if (!state.connected) return;
+            state.connected = false;
+            els.connLabel.textContent = 'DISCONNECTED';
+            els.connPill.classList.add('offline');
+            showToast('Your friend disconnected.');
+            const active = document.querySelector('.screen.active');
+            const activeId = active ? active.id : '';
+            if (activeId === 'race-screen' && state.finished && !state.oppResult) {
+                showResults();
+            } else if (activeId === 'setup-screen' && !state.isHost) {
+                setTimeout(() => teardownAndGoLobby(), 1800);
+            }
+        }
+
+        els.copyCodeBtn.addEventListener('click', async () => {
+            const code = state.roomCode || '';
+            try {
+                await navigator.clipboard.writeText(code);
+            } catch (e) {
+                const ta = document.createElement('textarea');
+                ta.value = code; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta); ta.select();
+                try { document.execCommand('copy'); } catch (e2) {}
+                document.body.removeChild(ta);
+            }
+            els.copyCodeBtn.textContent = 'COPIED';
+            setTimeout(() => { els.copyCodeBtn.textContent = 'COPY'; }, 1500);
+        });
+
+        /* ============ SETUP / CHAT ============ */
+        function enterSetup() {
+            showScreen('setup-screen');
+            els.statusBar.classList.remove('hidden');
+            els.connLabel.textContent = state.isHost ? 'HOST' : 'GUEST';
+            els.connPill.classList.remove('offline');
+            if (state.isHost) {
+                els.roleBanner.innerHTML = 'You are the <b class="text-[#06B6D4]">HOST</b> &mdash; pick a topic below to start the race';
+                els.diffSelector.classList.remove('hidden');
+                els.chatInputWrap.classList.remove('hidden');
+                els.readonlyBanner.classList.add('hidden');
+            } else {
+                els.roleBanner.innerHTML = 'Racing against the <b class="text-[#06B6D4]">HOST</b> &mdash; waiting for their topic pick';
+                els.diffSelector.classList.add('hidden');
+                els.chatInputWrap.classList.add('hidden');
+                els.readonlyBanner.classList.remove('hidden');
+            }
+        }
+
+        els.diffButtons.forEach(btn => {
+            btn.addEventListener('click', e => {
+                els.diffButtons.forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                state.difficulty = parseInt(e.target.getAttribute('data-level'));
+            });
+        });
+
+        function addMessage(text, role, interactive) {
             const bubble = document.createElement('div');
             bubble.className = `msg-bubble msg-${role}`;
-            if (role === 'ai' && isHostMsg) {
-                bubble.classList.add('host-msg');
-                bubble.innerHTML = `<div>${escapeHtml(text)}</div><button class="use-race-btn">Use for Race</button>`;
-                bubble.querySelector('.use-race-btn').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    lockRaceText(text);
-                });
-            } else {
-                bubble.textContent = text;
+            bubble.textContent = text;
+            if (role === 'ai' && interactive) {
+                bubble.classList.add('interactive');
+                bubble.addEventListener('click', () => lockTextAndStartRace(text));
             }
-            container.appendChild(bubble);
-            container.scrollTop = container.scrollHeight;
+            els.chatMessages.appendChild(bubble);
+            els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
         }
 
-        function escapeHtml(str) {
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        }
-
-        function showTypingIndicator(container) {
+        function showTypingIndicator() {
             const id = 'typing-' + Date.now();
             const div = document.createElement('div');
             div.id = id;
             div.className = 'typing-indicator msg-bubble msg-ai';
             div.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
+            els.chatMessages.appendChild(div);
+            els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
             return id;
         }
-
         function removeTypingIndicator(id) {
             const el = document.getElementById(id);
             if (el) el.remove();
         }
 
-        async function hostSendMessage() {
-            const text = els.hostChatInput.value.trim();
-            if (!text) return;
-            addChatMessage(text, 'user', els.hostChatMessages, true);
-            els.hostChatInput.value = '';
-            els.hostChatSend.disabled = true;
-            const typingId = showTypingIndicator(els.hostChatMessages);
-
+        async function sendMessage() {
+            const text = els.chatInput.value.trim();
+            if (!text || !state.isHost) return;
+            addMessage(text, 'user', false);
+            if (state.conn && state.conn.open) state.conn.send({ type: 'chat-user', text });
+            els.chatInput.value = '';
+            els.chatSend.disabled = true;
+            const typingId = showTypingIndicator();
             try {
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text, provider: RACE.selectedProvider })
+                    body: JSON.stringify({ message: text, provider: state.selectedProvider })
                 });
                 removeTypingIndicator(typingId);
-                if (!response.ok) throw new Error('Server error');
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.detail || 'Server error');
+                }
                 const data = await response.json();
                 const aiText = sanitizeText(data.text || "I couldn't generate a response. Try again!");
-                addChatMessage(aiText, 'ai', els.hostChatMessages, true);
-                sendData({ type: 'chat', role: 'ai', text: aiText });
+                addMessage(aiText, 'ai', true);
+                if (state.conn && state.conn.open) state.conn.send({ type: 'chat-ai', text: aiText });
             } catch (err) {
                 removeTypingIndicator(typingId);
-                addChatMessage("Sorry, couldn't connect to AI.", 'ai', els.hostChatMessages, true);
+                addMessage("Sorry, I couldn't connect to the AI. Please try again later.", 'ai', false);
+                console.error(err);
             } finally {
-                els.hostChatSend.disabled = false;
+                els.chatSend.disabled = false;
             }
         }
+        els.chatSend.addEventListener('click', sendMessage);
+        els.chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
 
-        els.hostChatSend.addEventListener('click', hostSendMessage);
-        els.hostChatInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') hostSendMessage();
-        });
-
-        /* ==========================================================
-           TEXT LOCKING & RACE START
-           ========================================================== */
-        function lockRaceText(text) {
-            const clean = sanitizeText(text);
-            RACE.targetText = clean;
-            RACE.charArray = clean.split('');
-
-            if (RACE.isHost) {
-                els.lockedTextPanel.style.display = 'block';
-                els.lockedTextPreview.textContent = clean.length > 120 ? clean.substring(0, 120) + '...' : clean;
-                els.startRaceBtn.disabled = false;
-                els.hostStatus.textContent = 'Text locked! Click Start Race when ready.';
-                sendData({ type: 'text', text: clean });
+        /* ============ TARGET TEXT + RACE START ============ */
+        function processTextForDifficulty(text) {
+            let processed = text;
+            if (state.difficulty === 1) {
+                processed = processed.toLowerCase().replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim();
+            } else if (state.difficulty === 2) {
+                processed = processed.replace(/[^a-zA-Z\s]/g, ' ').replace(/\s+/g, ' ').trim();
             } else {
-                els.joinWaitingSection.querySelector('.text-\[\#475569\]').textContent = 'Text selected! Race starting soon...';
+                processed = processed.replace(/\s+/g, ' ').trim();
+            }
+            state.charArray = processed.split('');
+        }
+
+        function lockTextAndStartRace(text) {
+            if (!state.isHost || state.raceStarting || !state.connected) return;
+            state.raceStarting = true;
+            const cleanText = sanitizeText(text);
+            state.rawText = cleanText;
+            const startAt = Date.now() + 4000;
+            if (state.conn && state.conn.open) {
+                state.conn.send({ type: 'race-start', text: cleanText, difficulty: state.difficulty, startAt });
+            }
+            beginRaceSequence(startAt);
+        }
+
+        function handlePeerData(data) {
+            if (!data || !data.type) return;
+            switch (data.type) {
+                case 'chat-user':
+                    addMessage(data.text, 'user', false);
+                    break;
+                case 'chat-ai':
+                    addMessage(data.text, 'ai', false);
+                    break;
+                case 'race-start':
+                    state.difficulty = data.difficulty;
+                    state.rawText = data.text;
+                    beginRaceSequence(data.startAt);
+                    break;
+                case 'progress':
+                    state.oppIndex = data.index;
+                    state.oppWpm = data.wpm;
+                    updateOpponentUI();
+                    if (data.index > 0) spawnThunderBolt(data.index - 1, 'friend');
+                    break;
+                case 'finish':
+                    state.oppResult = { wpm: data.wpm, accuracy: data.accuracy, timeMs: data.timeMs, forfeited: !!data.forfeited };
+                    checkRaceComplete();
+                    break;
+                case 'reset':
+                    goToSetup();
+                    break;
             }
         }
 
-        els.startRaceBtn.addEventListener('click', () => {
-            if (!RACE.targetText || !RACE.conn || !RACE.conn.open) return;
-            els.startRaceBtn.disabled = true;
-            sendData({ type: 'start_countdown' });
-            beginCountdown();
-        });
-
-        /* ==========================================================
-           COUNTDOWN
-           ========================================================== */
-        function beginCountdown() {
-            showScreen('race');
-            renderRaceText();
-            RACE.countdownActive = true;
-            els.countdownOverlay.classList.add('show');
-            els.mobileInput.blur();
-
-            let count = 3;
-            showCountdownNumber(count);
-
-            const interval = setInterval(() => {
-                count--;
-                if (count > 0) {
-                    showCountdownNumber(count);
-                    sendData({ type: 'countdown', value: count });
-                } else {
-                    clearInterval(interval);
-                    showGo();
-                    sendData({ type: 'go' });
-                    setTimeout(() => {
-                        els.countdownOverlay.classList.remove('show');
-                        startRaceTyping();
-                    }, 1000);
-                }
-            }, 1000);
+        function resetRaceState() {
+            state.typedArray = []; state.currentIndex = 0; state.startTime = null; state.timerActive = false;
+            state.totalKeystrokes = 0; state.correctKeystrokes = 0; state.isTypingStarted = false; state.isBlocked = false;
+            state.finished = false; state.myResult = null; state.oppResult = null; state.oppIndex = -1; state.oppWpm = 0;
+            state.raceStarting = false;
+            els.mobileInput.value = '';
+            els.mobileInput.disabled = true;
+            els.wpm.textContent = '0';
+            els.accuracy.textContent = '100';
+            els.progress.textContent = '0';
+            els.myBar.style.width = '0%';
+            els.oppBar.style.width = '0%';
+            els.myWpmBadge.textContent = '0 wpm';
+            els.oppWpmBadge.textContent = '0 wpm';
+            els.waitingFinishBanner.classList.add('hidden');
+            els.focusOverlay.classList.add('hidden');
         }
 
-        function showCountdownNumber(n) {
-            els.countdownNumber.textContent = n;
-            els.countdownNumber.className = 'countdown-number';
-            void els.countdownNumber.offsetWidth;
-            els.countdownNumber.classList.add('countdown-number');
-        }
-
-        function showGo() {
-            els.countdownNumber.innerHTML = '<div class="countdown-go">GO!</div>';
-        }
-
-        /* ==========================================================
-           RACE TYPING LOGIC
-           ========================================================== */
-        function renderRaceText() {
+        function renderTextUI() {
             els.display.innerHTML = '';
-            RACE.charArray.forEach((char, index) => {
+            state.charArray.forEach((char, index) => {
                 const span = document.createElement('span');
                 span.innerText = char;
                 span.className = 'char untyped';
                 span.id = `char-${index}`;
                 els.display.appendChild(span);
             });
-            updateLocalCursor();
+            updateCursorUI();
         }
 
-        function updateLocalCursor() {
-            document.querySelectorAll('.char').forEach(el => {
-                el.classList.remove('caret', 'caret-static');
-            });
-            if (RACE.localIndex < RACE.charArray.length) {
-                const active = document.getElementById(`char-${RACE.localIndex}`);
-                if (active) active.classList.add('caret');
+        function beginRaceSequence(startAt) {
+            processTextForDifficulty(state.rawText);
+            resetRaceState();
+            renderTextUI();
+            els.container.scrollTop = 0;
+            showScreen('race-screen');
+            requestAnimationFrame(() => { els.container.scrollTop = 0; });
+            runCountdown(startAt);
+        }
+
+        function runCountdown(startAt) {
+            els.countdownOverlay.classList.add('active');
+            els.countdownNum.classList.remove('go');
+            let lastShown = null;
+            let goTriggered = false;
+            function tick() {
+                const remain = startAt - Date.now();
+                if (remain <= 0) {
+                    if (!goTriggered) {
+                        goTriggered = true;
+                        els.countdownNum.textContent = 'GO!';
+                        els.countdownNum.classList.add('go');
+                        playThunderCrack();
+                        setTimeout(() => {
+                            els.countdownOverlay.classList.remove('active');
+                            unlockRaceInput();
+                        }, 500);
+                    }
+                    return;
+                }
+                const secLeft = Math.min(3, Math.ceil(remain / 1000));
+                if (secLeft !== lastShown) {
+                    lastShown = secLeft;
+                    els.countdownNum.textContent = String(secLeft);
+                    els.countdownNum.style.animation = 'none';
+                    void els.countdownNum.offsetWidth;
+                    els.countdownNum.style.animation = '';
+                }
+                requestAnimationFrame(tick);
             }
+            tick();
         }
 
-        function updateOpponentCursor() {
-            document.querySelectorAll('.char').forEach(el => el.classList.remove('opponent-caret'));
-            if (RACE.opponentIndex >= 0 && RACE.opponentIndex < RACE.charArray.length) {
-                const opp = document.getElementById(`char-${RACE.opponentIndex}`);
-                if (opp) opp.classList.add('opponent-caret');
-            }
-        }
-
-        function startRaceTyping() {
-            RACE.raceStarted = true;
-            RACE.localStartTime = performance.now();
-            RACE.timerActive = true;
-            requestAnimationFrame(calculateRaceMetrics);
+        function unlockRaceInput() {
+            els.mobileInput.disabled = false;
+            els.mobileInput.value = '';
             els.mobileInput.focus();
+            updateCursorUI();
         }
 
-        function calculateRaceMetrics() {
-            if (!RACE.timerActive) return;
-            const timeMin = (performance.now() - RACE.localStartTime) / 60000;
-            let wpmVal = (RACE.localCorrect / 5) / timeMin;
-            let accVal = RACE.localTotal > 0 ? (RACE.localCorrect / RACE.localTotal) * 100 : 100;
-            if (!isFinite(wpmVal) || isNaN(wpmVal)) wpmVal = 0;
-            if (isNaN(accVal)) accVal = 100;
+        /* ============ TYPING ENGINE ============ */
+        els.container.addEventListener('click', () => els.mobileInput.focus());
+        els.mobileInput.addEventListener('focus', () => {
+            els.focusOverlay.classList.add('hidden');
+            updateCursorUI();
+        });
+        els.mobileInput.addEventListener('blur', () => {
+            if (!state.finished && state.currentIndex < state.charArray.length && !els.mobileInput.disabled) {
+                els.focusOverlay.classList.remove('hidden');
+                removeCursorUI();
+            }
+        });
+
+        function updateCursorUI() {
+            document.querySelectorAll('.char').forEach(el => el.classList.remove('caret', 'caret-static'));
+            if (state.currentIndex < state.charArray.length) {
+                const activeChar = document.getElementById(`char-${state.currentIndex}`);
+                if (activeChar) activeChar.classList.add(state.timerActive ? 'caret-static' : 'caret');
+            }
+        }
+        function removeCursorUI() {
+            document.querySelectorAll('.char').forEach(el => el.classList.remove('caret', 'caret-static'));
+        }
+
+        function getLineHeight() {
+            const c0 = document.getElementById('char-0');
+            if (!c0) {
+                const fs = parseFloat(window.getComputedStyle(els.container).fontSize) || 24;
+                return fs * 2.2;
+            }
+            for (let i = 1; i < state.charArray.length; i++) {
+                const c = document.getElementById(`char-${i}`);
+                if (c && c.offsetTop > c0.offsetTop + 2) return c.offsetTop - c0.offsetTop;
+            }
+            const style = window.getComputedStyle(els.container);
+            const lh = style.lineHeight;
+            if (lh === 'normal') { const fs = parseFloat(style.fontSize); return fs * 1.6; }
+            return parseFloat(lh) || 52;
+        }
+
+        function autoScroll() {
+            if (state.charArray.length === 0) return;
+            const activeChar = document.getElementById(`char-${state.currentIndex}`);
+            if (!activeChar) return;
+            const container = els.container;
+            const charTop = activeChar.offsetTop;
+            const charHeight = activeChar.offsetHeight || 20;
+            const containerHeight = container.clientHeight;
+            const scrollTop = container.scrollTop;
+            const lineHeight = getLineHeight();
+            const cursorBottom = charTop + charHeight;
+            const visibleBottom = scrollTop + containerHeight;
+            const visibleTop = scrollTop;
+            if (cursorBottom > visibleBottom - lineHeight * 0.3) {
+                container.scrollTop = Math.max(0, charTop - lineHeight * 2);
+            } else if (charTop < visibleTop + lineHeight * 0.3) {
+                container.scrollTop = Math.max(0, charTop - lineHeight * 0.5);
+            }
+        }
+
+        function updateProgress() {
+            const pct = state.charArray.length > 0 ? Math.round((state.currentIndex / state.charArray.length) * 100) : 0;
+            els.progress.textContent = pct;
+            els.myBar.style.width = pct + '%';
+        }
+
+        function computeLiveWpm() {
+            if (!state.startTime) return 0;
+            const timeElapsedMin = (performance.now() - state.startTime) / 60000;
+            let wpmVal = (state.correctKeystrokes / 5) / timeElapsedMin;
+            if (!isFinite(wpmVal)) wpmVal = 0;
+            return Math.round(wpmVal);
+        }
+
+        let lastProgressSentAt = 0;
+        function sendProgress() {
+            const now = performance.now();
+            if (now - lastProgressSentAt < 60) return;
+            lastProgressSentAt = now;
+            if (state.conn && state.conn.open) {
+                state.conn.send({ type: 'progress', index: state.currentIndex, wpm: computeLiveWpm() });
+            }
+        }
+
+        function calculateMetricsLoop() {
+            if (!state.timerActive) return;
+            const timeElapsedMin = (performance.now() - state.startTime) / 60000;
+            let wpmVal = (state.correctKeystrokes / 5) / timeElapsedMin;
+            let accVal = state.totalKeystrokes > 0 ? (state.correctKeystrokes / state.totalKeystrokes) * 100 : 100;
+            if (wpmVal === Infinity || isNaN(wpmVal)) wpmVal = 0;
+            if (accVal < 0 || isNaN(accVal)) accVal = 100;
             els.wpm.textContent = Math.round(wpmVal);
             els.accuracy.textContent = Math.round(accVal);
-            const pct = RACE.charArray.length > 0 ? Math.round((RACE.localIndex / RACE.charArray.length) * 100) : 0;
-            els.progress.textContent = pct;
-            if (!RACE.localFinished) {
-                requestAnimationFrame(calculateRaceMetrics);
-            }
+            els.myWpmBadge.textContent = Math.round(wpmVal) + ' wpm';
+            if (state.timerActive) requestAnimationFrame(calculateMetricsLoop);
         }
 
-        function updateOpponentProgress(index) {
-            const oldIndex = RACE.opponentIndex;
-            RACE.opponentIndex = index;
-            updateOpponentCursor();
-            const pct = RACE.charArray.length > 0 ? Math.round((index / RACE.charArray.length) * 100) : 0;
-            els.oppProgress.textContent = pct;
-            if (index > oldIndex) {
-                spawnThunderBolt(index, 'opponent');
-            }
+        function updateOppBar(pct, wpmVal) {
+            els.oppBar.style.width = Math.max(0, Math.min(100, pct)) + '%';
+            els.oppWpmBadge.textContent = Math.round(wpmVal) + ' wpm';
         }
 
-        /* Input Handling */
-        els.mobileInput.addEventListener('input', handleRaceInput);
-        els.container.addEventListener('click', () => els.mobileInput.focus());
-        els.mobileInput.addEventListener('focus', () => els.focusOverlay.classList.add('hidden'));
-        els.mobileInput.addEventListener('blur', () => {
-            if (!RACE.localFinished) els.focusOverlay.classList.remove('hidden');
-        });
+        let oppMarkerEl = null;
+        function updateOpponentUI() {
+            const pct = state.charArray.length > 0 ? (state.oppIndex / state.charArray.length) * 100 : 0;
+            updateOppBar(pct, state.oppWpm);
+            if (oppMarkerEl) oppMarkerEl.classList.remove('opp-marker');
+            const span = document.getElementById(`char-${state.oppIndex}`);
+            if (span) { span.classList.add('opp-marker'); oppMarkerEl = span; }
+        }
 
-        window.addEventListener('keydown', (e) => {
+        els.mobileInput.addEventListener('input', handleTypingInput);
+        window.addEventListener('keydown', e => {
             if (e.code === 'Space' && e.target === document.body) {
                 e.preventDefault();
-                if (RACE.raceStarted && !RACE.localFinished) els.mobileInput.focus();
+                if (document.getElementById('race-screen').classList.contains('active') && !els.mobileInput.disabled) {
+                    els.mobileInput.focus();
+                }
             }
         });
 
-        function handleRaceInput(e) {
-            if (!RACE.raceStarted || RACE.localFinished || RACE.countdownActive) return;
-
+        function handleTypingInput() {
+            if (state.finished) return;
             const inputValue = els.mobileInput.value;
             const inputLength = inputValue.length;
 
-            if (!RACE.timerActive && inputLength > 0 && !RACE.isBlocked) {
-                RACE.timerActive = true;
-                RACE.localStartTime = performance.now();
-                requestAnimationFrame(calculateRaceMetrics);
+            if (!state.timerActive && inputLength > 0 && !state.isBlocked) {
+                state.timerActive = true;
+                state.startTime = performance.now();
+                requestAnimationFrame(calculateMetricsLoop);
             }
+            if (!state.isTypingStarted && inputLength > 0) state.isTypingStarted = true;
 
             /* BACKSPACE */
-            if (inputLength < RACE.localIndex) {
-                const diff = RACE.localIndex - inputLength;
+            if (inputLength < state.currentIndex) {
+                const diff = state.currentIndex - inputLength;
                 for (let i = 0; i < diff; i++) {
-                    if (RACE.localIndex > 0) {
-                        RACE.localIndex--;
-                        RACE.localTyped.pop();
-                        const span = document.getElementById(`char-${RACE.localIndex}`);
+                    if (state.currentIndex > 0) {
+                        state.currentIndex--;
+                        state.typedArray.pop();
+                        const span = document.getElementById(`char-${state.currentIndex}`);
                         if (span) span.className = 'char untyped';
                     }
                 }
-                RACE.isBlocked = false;
-                updateLocalCursor();
-                updateOpponentCursor();
-                syncProgress();
+                state.isBlocked = false;
+                updateCursorUI();
+                updateProgress();
+                autoScroll();
+                sendProgress();
                 return;
             }
 
-            /* BLOCKED STATE */
-            if (RACE.isBlocked) {
-                if (inputLength > RACE.localIndex) {
-                    const typedChar = inputValue[RACE.localIndex];
-                    const expectedChar = RACE.charArray[RACE.localIndex];
+            /* BLOCKED (retry after wrong char) */
+            if (state.isBlocked) {
+                if (inputLength > state.currentIndex) {
+                    const typedChar = inputValue[state.currentIndex];
+                    const expectedChar = state.charArray[state.currentIndex];
                     if (typedChar === expectedChar) {
-                        RACE.isBlocked = false;
-                        RACE.localTyped.push(typedChar);
-                        RACE.localCorrect++;
-                        RACE.localTotal++;
-                        const span = document.getElementById(`char-${RACE.localIndex}`);
+                        state.isBlocked = false;
+                        state.typedArray.push(typedChar);
+                        state.correctKeystrokes++;
+                        state.totalKeystrokes++;
+                        const span = document.getElementById(`char-${state.currentIndex}`);
                         span.className = 'char correct';
-                        RACE.localIndex++;
-                        updateLocalCursor();
-                        updateOpponentCursor();
-                        syncProgress();
-                        spawnThunderBolt(RACE.localIndex - 1, 'correct');
-                        checkFinish();
+                        state.currentIndex++;
+                        updateCursorUI();
+                        updateProgress();
+                        autoScroll();
+                        spawnThunderBolt(state.currentIndex - 1, 'correct');
+                        sendProgress();
+                        if (state.currentIndex >= state.charArray.length) { finishRace(); return; }
                     } else {
-                        RACE.localTotal++;
-                        els.mobileInput.value = RACE.localTyped.join('');
-                        const span = document.getElementById(`char-${RACE.localIndex}`);
-                        if (span) {
-                            span.classList.remove('shake');
-                            void span.offsetWidth;
-                            span.classList.add('shake');
-                        }
+                        state.totalKeystrokes++;
+                        els.mobileInput.value = state.typedArray.join('');
+                        const span = document.getElementById(`char-${state.currentIndex}`);
+                        if (span) { span.classList.remove('shake'); void span.offsetWidth; span.classList.add('shake'); }
                     }
                 }
                 return;
             }
 
             /* NORMAL TYPING */
-            if (RACE.localIndex < RACE.charArray.length && inputLength > RACE.localIndex) {
-                const typedChar = inputValue[RACE.localIndex];
-                const expectedChar = RACE.charArray[RACE.localIndex];
-                const span = document.getElementById(`char-${RACE.localIndex}`);
-                RACE.localTotal++;
+            if (state.currentIndex < state.charArray.length && inputLength > state.currentIndex) {
+                const typedChar = inputValue[state.currentIndex];
+                const expectedChar = state.charArray[state.currentIndex];
+                const span = document.getElementById(`char-${state.currentIndex}`);
+                state.totalKeystrokes++;
 
                 if (typedChar === expectedChar) {
-                    RACE.localTyped.push(typedChar);
-                    RACE.localCorrect++;
+                    state.typedArray.push(typedChar);
+                    state.correctKeystrokes++;
                     span.className = 'char correct';
-                    RACE.localIndex++;
-                    updateLocalCursor();
-                    updateOpponentCursor();
-                    syncProgress();
-                    spawnThunderBolt(RACE.localIndex - 1, 'correct');
-                    checkFinish();
+                    state.currentIndex++;
+                    updateCursorUI();
+                    updateProgress();
+                    autoScroll();
+                    spawnThunderBolt(state.currentIndex - 1, 'correct');
+                    sendProgress();
+                    if (state.currentIndex >= state.charArray.length) { finishRace(); return; }
                 } else {
                     span.classList.remove('untyped');
                     span.classList.add('incorrect');
                     void span.offsetWidth;
                     span.classList.add('shake');
-                    RACE.isBlocked = true;
-                    els.mobileInput.value = RACE.localTyped.join('');
-                    spawnThunderBolt(RACE.localIndex, 'wrong');
+                    state.isBlocked = true;
+                    els.mobileInput.value = state.typedArray.join('');
+                    spawnThunderBolt(state.currentIndex, 'wrong');
                     playThunderRumble();
                 }
             }
         }
 
-        function syncProgress() {
-            sendData({ type: 'progress', index: RACE.localIndex });
+        /* ============ FINISH / RESULTS ============ */
+        function finishRace() {
+            state.timerActive = false;
+            const timeMs = performance.now() - state.startTime;
+            const timeElapsedMin = timeMs / 60000;
+            let wpmVal = (state.correctKeystrokes / 5) / timeElapsedMin;
+            let accVal = state.totalKeystrokes > 0 ? (state.correctKeystrokes / state.totalKeystrokes) * 100 : 100;
+            if (!isFinite(wpmVal)) wpmVal = 0;
+            if (!isFinite(accVal) || accVal < 0) accVal = 100;
+            state.finished = true;
+            els.mobileInput.blur();
+            els.mobileInput.disabled = true;
+            state.myResult = { wpm: Math.round(wpmVal), accuracy: Math.round(accVal), timeMs, forfeited: false };
+            els.wpm.textContent = state.myResult.wpm;
+            els.accuracy.textContent = state.myResult.accuracy;
+            if (state.conn && state.conn.open) {
+                state.conn.send({ type: 'finish', wpm: state.myResult.wpm, accuracy: state.myResult.accuracy, timeMs, forfeited: false });
+            }
+            checkRaceComplete();
         }
 
-        function checkFinish() {
-            if (RACE.localIndex >= RACE.charArray.length) {
-                RACE.localFinished = true;
-                RACE.localEndTime = performance.now();
-                RACE.timerActive = false;
-                els.mobileInput.blur();
-                const timeSec = ((RACE.localEndTime - RACE.localStartTime) / 1000).toFixed(1);
-                const timeMin = (RACE.localEndTime - RACE.localStartTime) / 60000;
-                const wpm = Math.round((RACE.localCorrect / 5) / timeMin);
-                const acc = RACE.localTotal > 0 ? Math.round((RACE.localCorrect / RACE.localTotal) * 100) : 100;
-                sendData({ type: 'finished', wpm: wpm, accuracy: acc, time: parseFloat(timeSec) });
-                checkRaceComplete();
+        els.forfeitBtn.addEventListener('click', () => {
+            if (state.finished) return;
+            state.timerActive = false;
+            state.finished = true;
+            els.mobileInput.blur();
+            els.mobileInput.disabled = true;
+            const timeMs = state.startTime ? (performance.now() - state.startTime) : 999999;
+            state.myResult = { wpm: 0, accuracy: 0, timeMs, forfeited: true };
+            if (state.conn && state.conn.open) {
+                state.conn.send({ type: 'finish', wpm: 0, accuracy: 0, timeMs, forfeited: true });
             }
-        }
+            checkRaceComplete();
+        });
 
         function checkRaceComplete() {
-            if (RACE.localFinished && RACE.opponentFinished) {
+            if (state.myResult && state.oppResult) {
                 showResults();
-            } else if (RACE.localFinished) {
-                els.focusOverlay.classList.remove('hidden');
-                els.focusOverlay.querySelector('span').innerHTML = '<span class="text-[#06B6D4] font-bold">Finished!</span> Waiting for opponent...';
+            } else if (state.myResult && !state.oppResult) {
+                els.waitingFinishBanner.classList.remove('hidden');
             }
         }
 
-        /* ==========================================================
-           RESULTS
-           ========================================================== */
+        function determineWinner() {
+            const mine = state.myResult, opp = state.oppResult;
+            if (!opp) return 'me';
+            if (mine.forfeited && !opp.forfeited) return 'friend';
+            if (opp.forfeited && !mine.forfeited) return 'me';
+            if (mine.forfeited && opp.forfeited) return 'tie';
+            if (mine.timeMs < opp.timeMs) return 'me';
+            if (opp.timeMs < mine.timeMs) return 'friend';
+            if (mine.wpm > opp.wpm) return 'me';
+            if (opp.wpm > mine.wpm) return 'friend';
+            return 'tie';
+        }
+
         function showResults() {
-            const timeMin = (RACE.localEndTime - RACE.localStartTime) / 60000;
-            const localWpm = Math.round((RACE.localCorrect / 5) / timeMin) || 0;
-            const localAcc = RACE.localTotal > 0 ? Math.round((RACE.localCorrect / RACE.localTotal) * 100) : 100;
-            const localTime = ((RACE.localEndTime - RACE.localStartTime) / 1000).toFixed(1);
+            showScreen('results-screen');
+            els.waitingFinishBanner.classList.add('hidden');
+            const winner = determineWinner();
+            els.resultBanner.classList.remove('win', 'lose');
+            if (winner === 'me') { els.resultBanner.textContent = 'YOU WIN! \ud83c\udfc6'; els.resultBanner.classList.add('win'); }
+            else if (winner === 'friend') { els.resultBanner.textContent = 'FRIEND WINS'; els.resultBanner.classList.add('lose'); }
+            else { els.resultBanner.textContent = "IT'S A TIE!"; }
 
-            els.localWpm.textContent = localWpm;
-            els.localAcc.textContent = localAcc + '%';
-            els.localTime.textContent = localTime + 's';
+            els.myResultCard.classList.toggle('winner', winner === 'me');
+            els.myResultCard.classList.toggle('me', winner === 'me');
+            els.oppResultCard.classList.toggle('winner', winner === 'friend');
+            els.oppResultCard.classList.toggle('friend', winner === 'friend');
 
-            if (RACE.opponentMetrics) {
-                els.oppWpm.textContent = RACE.opponentMetrics.wpm;
-                els.oppAcc.textContent = RACE.opponentMetrics.accuracy + '%';
-                els.oppTime.textContent = RACE.opponentMetrics.time + 's';
+            els.resMyWpm.textContent = state.myResult.wpm;
+            els.resMyAcc.textContent = state.myResult.accuracy + '%';
+            els.resMyTime.textContent = state.myResult.forfeited ? 'gave up' : (state.myResult.timeMs / 1000).toFixed(1) + 's';
 
-                if (localWpm > RACE.opponentMetrics.wpm) {
-                    els.winnerBadge.textContent = 'You Win!';
-                    els.localResult.classList.add('winner');
-                    els.oppResult.classList.remove('winner');
-                    els.oppResult.classList.add('loser');
-                } else if (localWpm < RACE.opponentMetrics.wpm) {
-                    els.winnerBadge.textContent = 'Friend Wins!';
-                    els.oppResult.classList.add('winner');
-                    els.localResult.classList.remove('winner');
-                    els.localResult.classList.add('loser');
-                } else {
-                    els.winnerBadge.textContent = "It's a Tie!";
-                    els.localResult.classList.add('winner');
-                    els.oppResult.classList.add('winner');
-                }
+            if (state.oppResult) {
+                els.resOppWpm.textContent = state.oppResult.wpm;
+                els.resOppAcc.textContent = state.oppResult.accuracy + '%';
+                els.resOppTime.textContent = state.oppResult.forfeited ? 'gave up' : (state.oppResult.timeMs / 1000).toFixed(1) + 's';
             } else {
-                els.winnerBadge.textContent = 'Race Complete';
-                els.oppWpm.textContent = '-';
-                els.oppAcc.textContent = '-';
-                els.oppTime.textContent = '-';
+                els.resOppWpm.textContent = '\u2014';
+                els.resOppAcc.textContent = '\u2014';
+                els.resOppTime.textContent = '\u2014';
             }
 
-            els.resultsOverlay.classList.add('active');
+            els.rematchBtn.classList.toggle('hidden', !state.isHost);
+            els.guestRematchNote.classList.toggle('hidden', state.isHost);
         }
 
-        /* ==========================================================
-           THUNDER ENGINE (Extended for Opponent Yellow)
-           ========================================================== */
+        function goToSetup() {
+            showScreen('setup-screen');
+        }
+        els.rematchBtn.addEventListener('click', () => {
+            if (!state.isHost) return;
+            if (state.conn && state.conn.open) state.conn.send({ type: 'reset' });
+            goToSetup();
+        });
+
+        /* ============ THUNDER ENGINE ============ */
         const canvas = els.thunderCanvas;
         const ctx = canvas.getContext('2d');
         let particles = [];
@@ -952,7 +1096,7 @@
         function resizeThunderCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            const fsize = parseFloat(window.getComputedStyle(els.display).fontSize) || 26.4;
+            const fsize = parseFloat(window.getComputedStyle(els.display).fontSize) || 24;
             charW = fsize * 0.601;
         }
         resizeThunderCanvas();
@@ -1004,7 +1148,7 @@
                 master.connect(ac.destination);
                 noise.start(now);
                 noise.stop(now + dur);
-            } catch(e) {}
+            } catch (e) {}
         }
 
         function playThunderRumble() {
@@ -1044,7 +1188,7 @@
                 master.connect(ac.destination);
                 noise.start(now);
                 noise.stop(now + dur);
-            } catch(e) {}
+            } catch (e) {}
         }
 
         class LightningBolt {
@@ -1053,26 +1197,17 @@
                 this.y = y + (Math.random() - 0.5) * 10;
                 this.life = 1;
                 this.type = type;
+                this.dir = (type === 'wrong') ? -1 : 1;
                 this.totalLen = charW;
                 this.decay = 0.055 + Math.random() * 0.03;
-
                 if (type === 'correct') {
-                    this.dir = 1;
-                    this.colTip  = '#e0f7ff';
-                    this.colMid  = '#4dcfff';
-                    this.colGlow = '#06B6D4';
+                    this.colTip = '#e0f7ff'; this.colMid = '#4dcfff'; this.colGlow = '#06B6D4';
                     this.w = 2.6 + Math.random() * 1.2;
-                } else if (type === 'opponent') {
-                    this.dir = Math.random() < 0.5 ? 1 : -1;
-                    this.colTip  = '#fffbeb';
-                    this.colMid  = '#FCD34D';
-                    this.colGlow = '#F59E0B';
+                } else if (type === 'friend') {
+                    this.colTip = '#fff8db'; this.colMid = '#FFD60A'; this.colGlow = '#F5B700';
                     this.w = 2.6 + Math.random() * 1.2;
                 } else {
-                    this.dir = -1;
-                    this.colTip  = '#c8eeff';
-                    this.colMid  = '#06B6D4';
-                    this.colGlow = '#0891b2';
+                    this.colTip = '#c8eeff'; this.colMid = '#06B6D4'; this.colGlow = '#0891b2';
                     this.w = 3.0 + Math.random() * 1.5;
                 }
                 this.buildPath();
@@ -1129,9 +1264,7 @@
             draw() {
                 const a = Math.max(0, this.life);
                 this.drawPoly(this.pts, this.startX, this.y, a);
-                for (const b of this.branches) {
-                    this.drawPoly(b, this.startX, this.y, a * 0.55);
-                }
+                for (const b of this.branches) this.drawPoly(b, this.startX, this.y, a * 0.55);
             }
         }
 
@@ -1139,9 +1272,13 @@
             const span = document.getElementById(`char-${charIndex}`);
             if (!span) return;
             const rect = span.getBoundingClientRect();
+            if (type === 'friend') {
+                const contRect = els.container.getBoundingClientRect();
+                if (rect.top < contRect.top - 4 || rect.bottom > contRect.bottom + 4) return;
+            }
             const x = rect.left + rect.width / 2;
             const y = rect.top + rect.height / 2;
-            const count = (type === 'correct') ? 2 : (type === 'opponent' ? 2 : 3);
+            const count = (type === 'wrong') ? 3 : 2;
             for (let i = 0; i < count; i++) {
                 particles.push(new LightningBolt(x, y + (Math.random() - 0.5) * 10, type));
             }
@@ -1154,10 +1291,6 @@
             particles.forEach(p => { p.update(); p.draw(); });
             requestAnimationFrame(thunderLoop);
         })();
-
-        document.addEventListener('DOMContentLoaded', () => {
-            els.passwordInput.focus();
-        });
     </script>
 </body>
 </html>
