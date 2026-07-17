@@ -4,543 +4,139 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>FluidType | AI Learning Engine</title>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-
     <style>
-        :root {
-            --bg-base: #0B0F19;
-            --bg-surface: #151C2C;
-            --text-main: #F8FAFC;
-            --text-dim: #475569;
-            --error-color: #EF4444;
-            --error-bg: rgba(239, 68, 68, 0.2);
-            --accent: #06B6D4;
-            --accent-glow: rgba(6, 182, 212, 0.5);
-        }
-
-        body {
-            background-color: var(--bg-base);
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
-            -webkit-tap-highlight-color: transparent;
-            overflow-x: hidden;
-        }
-
-        #typing-container {
-            font-family: 'Fira Code', monospace;
-            line-height: 1.6;
-            --line-height: calc(1.65rem * 2.2);
-            height: calc(3.5 * var(--line-height));
-            overflow-y: auto;
-            padding: 1.25rem;
-            border-radius: 16px;
-            background: rgba(21, 28, 44, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            scrollbar-width: thin;
-            scrollbar-color: var(--accent) transparent;
-            scroll-behavior: smooth;
-        }
+        :root { --bg-base: #0B0F19; --bg-surface: #151C2C; --text-main: #F8FAFC; --text-dim: #475569; --error-color: #EF4444; --error-bg: rgba(239,68,68,0.2); --accent: #06B6D4; --accent-glow: rgba(6,182,212,0.5); }
+        body { background-color: var(--bg-base); color: var(--text-main); font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
+        #typing-container { font-family: 'Fira Code', monospace; line-height: 1.6; --line-height: calc(1.65rem * 2.2); height: calc(3.5 * var(--line-height)); overflow-y: auto; padding: 1.25rem; border-radius: 16px; background: rgba(21,28,44,0.5); border: 1px solid rgba(255,255,255,0.06); scrollbar-width: thin; scrollbar-color: var(--accent) transparent; scroll-behavior: smooth; overscroll-behavior: contain; }
         #typing-container::-webkit-scrollbar { width: 6px; }
-        #typing-container::-webkit-scrollbar-thumb {
-            background: var(--accent);
-            border-radius: 3px;
-        }
-
-        .char {
-            white-space: pre;
-            border-radius: 4px;
-            transition: color 0.1s ease, background-color 0.1s ease;
-        }
-
+        #typing-container::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+        .char { white-space: pre; border-radius: 4px; transition: color 0.1s ease, background-color 0.1s ease; }
         .char.untyped { color: var(--text-dim); }
-        .char.correct {
-            color: var(--text-main);
-            text-shadow: 0 0 8px rgba(248, 250, 252, 0.2);
-        }
-        .char.incorrect {
-            color: var(--error-color);
-            background-color: var(--error-bg);
-        }
-
-        .caret {
-            border-left: 2px solid var(--accent);
-            box-shadow: -2px 0 8px var(--accent-glow);
-            animation: blink 1s infinite cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .caret-static {
-            border-left: 2px solid var(--accent);
-            box-shadow: -2px 0 8px var(--accent-glow);
-        }
-
-        @keyframes blink {
-            0%, 100% { border-color: transparent; box-shadow: none; }
-            50% { border-color: var(--accent); box-shadow: -2px 0 8px var(--accent-glow); }
-        }
-
-        .shake {
-            animation: shakeError 0.3s cubic-bezier(.36,.07,.19,.97) both;
-        }
-
-        @keyframes shakeError {
-            10%, 90% { transform: translate3d(-1px, 0, 0); }
-            20%, 80% { transform: translate3d(2px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
-            40%, 60% { transform: translate3d(3px, 0, 0); }
-        }
-
-        #mobile-input-target {
-            position: absolute;
-            opacity: 0;
-            top: 0;
-            left: 0;
-            height: 100%;
-            width: 100%;
-            z-index: -1;
-            pointer-events: none;
-        }
-
-        .glass-panel {
-            background: rgba(21, 28, 44, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .gradient-text {
-            background: linear-gradient(135deg, #06B6D4, #8B5CF6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .password-screen {
-            position: fixed;
-            inset: 0;
-            z-index: 100;
-            background: var(--bg-base);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 24px;
-            transition: opacity 0.6s ease, transform 0.6s ease;
-        }
-        .password-screen.hidden {
-            opacity: 0;
-            pointer-events: none;
-            transform: scale(0.95);
-        }
-        .password-input {
-            background: var(--bg-surface);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            padding: 16px 24px;
-            font-family: 'Fira Code', monospace;
-            font-size: 1.5rem;
-            color: var(--text-main);
-            text-align: center;
-            letter-spacing: 8px;
-            width: 200px;
-            outline: none;
-            transition: border-color 0.3s, box-shadow 0.3s;
-        }
-        .password-input:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 20px rgba(6, 182, 212, 0.15);
-        }
-        .password-input::placeholder {
-            letter-spacing: 4px;
-            font-size: 0.9rem;
-            color: var(--text-dim);
-        }
-        .password-label {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 12px;
-            letter-spacing: 4px;
-            color: var(--accent);
-            text-transform: uppercase;
-        }
-        .password-error {
-            color: var(--error-color);
-            font-size: 0.85rem;
-            height: 20px;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
+        .char.correct { color: var(--text-main); text-shadow: 0 0 8px rgba(248,250,252,0.2); }
+        .char.incorrect { color: var(--error-color); background-color: var(--error-bg); }
+        .caret { border-left: 2px solid var(--accent); box-shadow: -2px 0 8px var(--accent-glow); animation: blink 1s infinite cubic-bezier(0.4,0,0.2,1); }
+        .caret-static { border-left: 2px solid var(--accent); box-shadow: -2px 0 8px var(--accent-glow); }
+        @keyframes blink { 0%,100% { border-color: transparent; box-shadow: none; } 50% { border-color: var(--accent); box-shadow: -2px 0 8px var(--accent-glow); } }
+        .shake { animation: shakeError 0.3s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shakeError { 10%,90% { transform: translate3d(-1px,0,0); } 20%,80% { transform: translate3d(2px,0,0); } 30%,50%,70% { transform: translate3d(-3px,0,0); } 40%,60% { transform: translate3d(3px,0,0); } }
+        #mobile-input-target { position: absolute; opacity: 0; top: 0; left: 0; height: 100%; width: 100%; z-index: -1; pointer-events: none; }
+        .glass-panel { background: rgba(21,28,44,0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+        .gradient-text { background: linear-gradient(135deg, #06B6D4, #8B5CF6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .password-screen { position: fixed; inset: 0; z-index: 100; background: var(--bg-base); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; transition: opacity 0.6s ease, transform 0.6s ease; }
+        .password-screen.hidden { opacity: 0; pointer-events: none; transform: scale(0.95); }
+        .password-input { background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px 24px; font-family: 'Fira Code', monospace; font-size: 1.5rem; color: var(--text-main); text-align: center; letter-spacing: 8px; width: 200px; outline: none; transition: border-color 0.3s, box-shadow 0.3s; }
+        .password-input:focus { border-color: var(--accent); box-shadow: 0 0 20px rgba(6,182,212,0.15); }
+        .password-input::placeholder { letter-spacing: 4px; font-size: 0.9rem; color: var(--text-dim); }
+        .password-label { font-family: 'Orbitron', sans-serif; font-size: 12px; letter-spacing: 4px; color: var(--accent); text-transform: uppercase; }
+        .password-error { color: var(--error-color); font-size: 0.85rem; height: 20px; opacity: 0; transition: opacity 0.3s; }
         .password-error.show { opacity: 1; }
-
-        .init-screen {
-            position: fixed;
-            inset: 0;
-            z-index: 90;
-            background: var(--bg-base);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 30px;
-            transition: opacity 0.6s ease, transform 0.6s ease;
-        }
-        .init-screen.hidden {
-            opacity: 0;
-            pointer-events: none;
-            transform: scale(0.95);
-        }
-        .init-btn {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 14px;
-            letter-spacing: 4px;
-            color: var(--accent);
-            border: 1px solid var(--accent);
-            background: transparent;
-            padding: 16px 48px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-        }
-        .init-btn:hover {
-            background: rgba(6, 182, 212, 0.1);
-            box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
-            transform: scale(1.05);
-        }
-
-        .chat-screen {
-            display: none;
-            flex-direction: column;
-            height: 100vh;
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            gap: 16px;
-        }
+        .init-screen { position: fixed; inset: 0; z-index: 90; background: var(--bg-base); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px; transition: opacity 0.6s ease, transform 0.6s ease; }
+        .init-screen.hidden { opacity: 0; pointer-events: none; transform: scale(0.95); }
+        .init-btn { font-family: 'Orbitron', sans-serif; font-size: 14px; letter-spacing: 4px; color: var(--accent); border: 1px solid var(--accent); background: transparent; padding: 16px 48px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; }
+        .init-btn:hover { background: rgba(6,182,212,0.1); box-shadow: 0 0 30px rgba(6,182,212,0.2); transform: scale(1.05); }
+        .init-btn.race { border-color: #FCD34D; color: #FCD34D; }
+        .init-btn.race:hover { background: rgba(252,211,77,0.1); box-shadow: 0 0 30px rgba(252,211,77,0.2); }
+        .chat-screen { display: none; flex-direction: column; height: 100vh; width: 100%; max-width: 800px; margin: 0 auto; padding: 20px; gap: 16px; }
         .chat-screen.active { display: flex; }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            padding: 10px;
-        }
+        .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 10px; }
         .chat-messages::-webkit-scrollbar { width: 4px; }
-        .chat-messages::-webkit-scrollbar-thumb {
-            background: var(--accent);
-            border-radius: 4px;
-        }
-
-        .msg-bubble {
-            max-width: 85%;
-            padding: 14px 18px;
-            border-radius: 14px;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            animation: msgIn 0.3s ease-out;
-            word-break: break-word;
-        }
-        @keyframes msgIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .msg-user {
-            align-self: flex-end;
-            background: rgba(6, 182, 212, 0.12);
-            border: 1px solid rgba(6, 182, 212, 0.2);
-            color: var(--text-main);
-        }
-        .msg-ai {
-            align-self: flex-start;
-            background: var(--bg-surface);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            color: var(--text-main);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .msg-ai:hover {
-            border-color: rgba(6, 182, 212, 0.3);
-            box-shadow: 0 0 20px rgba(6, 182, 212, 0.08);
-        }
-        .msg-ai.tap-hint::after {
-            content: "tap to practice";
-            display: block;
-            font-size: 0.7rem;
-            color: var(--accent);
-            margin-top: 8px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            opacity: 0.7;
-        }
-
-        .chat-input-wrap {
-            display: flex;
-            gap: 10px;
-            padding: 12px;
-            background: var(--bg-surface);
-            border-radius: 16px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .chat-input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
-            font-size: 0.95rem;
-            padding: 8px 12px;
-        }
+        .chat-messages::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
+        .msg-bubble { max-width: 85%; padding: 14px 18px; border-radius: 14px; font-size: 0.95rem; line-height: 1.6; animation: msgIn 0.3s ease-out; word-break: break-word; }
+        @keyframes msgIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .msg-user { align-self: flex-end; background: rgba(6,182,212,0.12); border: 1px solid rgba(6,182,212,0.2); color: var(--text-main); }
+        .msg-ai { align-self: flex-start; background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.05); color: var(--text-main); cursor: pointer; transition: all 0.2s ease; }
+        .msg-ai:hover { border-color: rgba(6,182,212,0.3); box-shadow: 0 0 20px rgba(6,182,212,0.08); }
+        .msg-ai.tap-hint::after { content: "tap to practice"; display: block; font-size: 0.7rem; color: var(--accent); margin-top: 8px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.7; }
+        .chat-input-wrap { display: flex; gap: 10px; padding: 12px; background: var(--bg-surface); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); }
+        .chat-input { flex: 1; background: transparent; border: none; outline: none; color: var(--text-main); font-family: 'Inter', sans-serif; font-size: 0.95rem; padding: 8px 12px; }
         .chat-input::placeholder { color: var(--text-dim); }
-        .chat-send {
-            background: var(--accent);
-            color: var(--bg-base);
-            border: none;
-            border-radius: 12px;
-            padding: 10px 20px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .chat-send:hover {
-            box-shadow: 0 0 20px var(--accent-glow);
-            transform: scale(1.05);
-        }
-        .chat-send:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .typing-indicator {
-            display: flex;
-            gap: 6px;
-            padding: 14px 18px;
-            align-self: flex-start;
-        }
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--accent);
-            border-radius: 50%;
-            animation: typingBounce 1.4s infinite ease-in-out both;
-        }
+        .chat-send { background: var(--accent); color: var(--bg-base); border: none; border-radius: 12px; padding: 10px 20px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
+        .chat-send:hover { box-shadow: 0 0 20px var(--accent-glow); transform: scale(1.05); }
+        .chat-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+        .typing-indicator { display: flex; gap: 6px; padding: 14px 18px; align-self: flex-start; }
+        .typing-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: typingBounce 1.4s infinite ease-in-out both; }
         .typing-dot:nth-child(1) { animation-delay: -0.32s; }
         .typing-dot:nth-child(2) { animation-delay: -0.16s; }
-        @keyframes typingBounce {
-            0%, 80%, 100% { transform: scale(0); opacity: 0.4; }
-            40% { transform: scale(1); opacity: 1; }
-        }
-
-        .typing-modal {
-            position: fixed;
-            inset: 0;
-            z-index: 200;
-            background: rgba(11, 15, 25, 0.95);
-            backdrop-filter: blur(8px);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            opacity: 0;
-            transition: opacity 0.4s ease;
-        }
-        .typing-modal.active {
-            display: flex;
-            opacity: 1;
-        }
-
-        .typing-modal-content {
-            width: 100%;
-            max-width: 900px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .start-typing-btn {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 210;
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            background: var(--bg-surface);
-            border: 2px solid var(--accent);
-            color: var(--accent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .start-typing-btn:hover {
-            box-shadow: 0 0 25px var(--accent-glow), 0 0 50px rgba(6, 182, 212, 0.15);
-            transform: scale(1.08);
-            background: rgba(6, 182, 212, 0.08);
-        }
-        .start-typing-btn.glowing {
-            animation: btnGlow 2s ease-in-out infinite alternate;
-        }
-        @keyframes btnGlow {
-            from { box-shadow: 0 0 10px var(--accent-glow); }
-            to { box-shadow: 0 0 30px var(--accent-glow), 0 0 60px rgba(6, 182, 212, 0.2); }
-        }
-
-        .close-modal-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 210;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: var(--bg-surface);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: var(--text-dim);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 1.2rem;
-        }
-        .close-modal-btn:hover {
-            color: var(--error-color);
-            border-color: var(--error-color);
-        }
-
-        #thunder-canvas {
-            position: fixed;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 5;
-        }
-
-        .scanline {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 2;
-            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(6,182,212,0.012) 2px, rgba(6,182,212,0.012) 4px);
-        }
-
-        /* Settings Dropdown */
-        .settings-dropdown {
-            position: absolute;
-            right: 0;
-            top: calc(100% + 8px);
-            width: 220px;
-            z-index: 50;
-            background: rgba(21, 28, 44, 0.95);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
-            padding: 12px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-        }
+        @keyframes typingBounce { 0%,80%,100% { transform: scale(0); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+        .typing-modal { position: fixed; inset: 0; z-index: 200; background: rgba(11,15,25,0.95); backdrop-filter: blur(8px); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; opacity: 0; transition: opacity 0.4s ease; }
+        .typing-modal.active { display: flex; opacity: 1; }
+        .typing-modal-content { width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 20px; }
+        .start-typing-btn { position: fixed; top: 20px; left: 20px; z-index: 210; width: 52px; height: 52px; border-radius: 50%; background: var(--bg-surface); border: 2px solid var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; }
+        .start-typing-btn:hover { box-shadow: 0 0 25px var(--accent-glow), 0 0 50px rgba(6,182,212,0.15); transform: scale(1.08); background: rgba(6,182,212,0.08); }
+        .start-typing-btn.glowing { animation: btnGlow 2s ease-in-out infinite alternate; }
+        @keyframes btnGlow { from { box-shadow: 0 0 10px var(--accent-glow); } to { box-shadow: 0 0 30px var(--accent-glow), 0 0 60px rgba(6,182,212,0.2); } }
+        .close-modal-btn { position: fixed; top: 20px; right: 20px; z-index: 210; width: 44px; height: 44px; border-radius: 50%; background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; font-size: 1.2rem; }
+        .close-modal-btn:hover { color: var(--error-color); border-color: var(--error-color); }
+        #thunder-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+        .scanline { position: fixed; inset: 0; pointer-events: none; z-index: 2; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(6,182,212,0.012) 2px, rgba(6,182,212,0.012) 4px); }
+        .settings-dropdown { position: absolute; right: 0; top: calc(100% + 8px); width: 220px; z-index: 50; background: rgba(21,28,44,0.95); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
         .settings-dropdown.hidden { display: none; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 relative">
-
     <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#06B6D4] opacity-[0.03] rounded-full blur-[100px] pointer-events-none"></div>
 
-    <!-- PASSWORD SCREEN -->
     <div class="password-screen" id="password-screen">
-        <h1 class="text-3xl font-extrabold tracking-tight mb-4">
-            FLUID<span class="gradient-text">TYPE</span>
-        </h1>
+        <h1 class="text-3xl font-extrabold tracking-tight mb-4">FLUID<span class="gradient-text">TYPE</span></h1>
         <div class="password-label">Enter Access Code</div>
-        <input type="password" class="password-input" id="password-input" maxlength="6" placeholder="••••" autocomplete="off">
+        <input type="password" class="password-input" id="password-input" maxlength="6" placeholder="&#8226;&#8226;&#8226;&#8226;" autocomplete="off">
         <div class="password-error" id="password-error">Access Denied</div>
     </div>
 
-    <!-- INIT SCREEN -->
     <div class="init-screen hidden" id="init-screen">
-        <h1 class="text-3xl font-extrabold tracking-tight">
-            FLUID<span class="gradient-text">TYPE</span>
-        </h1>
-        <p class="text-[#475569] text-sm max-w-md text-center leading-relaxed">
-            Initialize the AI Learning Engine. Engage the chatbot to generate topics, then practice typing with thunder-powered precision.
-        </p>
-        <button class="init-btn" id="init-btn">INIT</button>
+        <h1 class="text-3xl font-extrabold tracking-tight">FLUID<span class="gradient-text">TYPE</span></h1>
+        <p class="text-[#475569] text-sm max-w-md text-center leading-relaxed">Initialize the AI Learning Engine. Engage the chatbot to generate topics, then practice typing with thunder-powered precision. Or challenge a friend in Race Mode.</p>
+        <div class="flex gap-4 flex-wrap justify-center">
+            <button class="init-btn" id="init-btn">INIT</button>
+            <button class="init-btn race" id="race-btn">RACE</button>
+        </div>
     </div>
 
-    <!-- CHATBOT SCREEN -->
     <div class="chat-screen" id="chat-screen">
         <header class="flex justify-between items-center pb-4 border-b border-white/5 relative">
-            <h1 class="text-2xl font-extrabold tracking-tight">
-                FLUID<span class="gradient-text">TYPE</span>
-                <span class="text-xs text-[#475569] font-normal ml-2 tracking-widest">AI CHAT</span>
-            </h1>
+            <h1 class="text-2xl font-extrabold tracking-tight">FLUID<span class="gradient-text">TYPE</span><span class="text-xs text-[#475569] font-normal ml-2 tracking-widest">AI CHAT</span></h1>
             <div class="flex items-center gap-3">
+                <a href="race.html" class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg border border-[#FCD34D]/30 text-[#FCD34D] text-xs font-bold uppercase tracking-widest hover:bg-[#FCD34D]/10 transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    Race
+                </a>
                 <div class="text-xs text-[#475569] font-bold uppercase tracking-widest hidden sm:block">Ask any topic</div>
                 <div class="relative">
                     <button id="settings-btn" class="p-2 rounded-lg hover:bg-white/5 transition-colors border border-white/5">
-                        <svg class="w-5 h-5 text-[#475569]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        </svg>
+                        <svg class="w-5 h-5 text-[#475569]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     </button>
                     <div id="settings-dropdown" class="settings-dropdown hidden">
                         <div class="text-xs text-[#475569] font-bold uppercase tracking-widest mb-2 px-1">AI Provider</div>
-                        <div class="space-y-0.5" id="provider-options">
-                            <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors">
-                                <input type="radio" name="provider" value="auto" checked class="accent-[#06B6D4] w-4 h-4">
-                                <span class="text-sm text-[#F8FAFC]">Auto (Failover)</span>
-                            </label>
-                            <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors">
-                                <input type="radio" name="provider" value="groq1" class="accent-[#06B6D4] w-4 h-4">
-                                <span class="text-sm text-[#F8FAFC]">Groq Key 1</span>
-                            </label>
-                            <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors">
-                                <input type="radio" name="provider" value="groq2" class="accent-[#06B6D4] w-4 h-4">
-                                <span class="text-sm text-[#F8FAFC]">Groq Key 2</span>
-                            </label>
-                            <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors">
-                                <input type="radio" name="provider" value="gemini1" class="accent-[#06B6D4] w-4 h-4">
-                                <span class="text-sm text-[#F8FAFC]">Gemini Key 1</span>
-                            </label>
+                        <div class="space-y-0.5">
+                            <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors"><input type="radio" name="provider" value="auto" checked class="accent-[#06B6D4] w-4 h-4"><span class="text-sm text-[#F8FAFC]">Auto (Failover)</span></label>
+                            <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors"><input type="radio" name="provider" value="groq1" class="accent-[#06B6D4] w-4 h-4"><span class="text-sm text-[#F8FAFC]">Groq Key 1</span></label>
+                            <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors"><input type="radio" name="provider" value="groq2" class="accent-[#06B6D4] w-4 h-4"><span class="text-sm text-[#F8FAFC]">Groq Key 2</span></label>
+                            <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors"><input type="radio" name="provider" value="gemini1" class="accent-[#06B6D4] w-4 h-4"><span class="text-sm text-[#F8FAFC]">Gemini Key 1</span></label>
                         </div>
                     </div>
                 </div>
             </div>
         </header>
-
         <div class="chat-messages" id="chat-messages">
-            <div class="msg-bubble msg-ai">
-                Welcome to FluidType AI. Ask me about any topic - AI, technology, science, history, or anything you want to learn. I will generate a paragraph you can practice typing!
-            </div>
+            <div class="msg-bubble msg-ai">Welcome to FluidType AI. Ask me about any topic - AI, technology, science, history, or anything you want to learn. I will generate a paragraph you can practice typing!</div>
         </div>
-
         <div class="chat-input-wrap">
             <input type="text" class="chat-input" id="chat-input" placeholder="Ask about AI, tech, space..." autocomplete="off">
             <button class="chat-send" id="chat-send">Send</button>
         </div>
     </div>
 
-    <!-- TYPING PRACTICE MODAL -->
     <div class="typing-modal" id="typing-modal">
         <canvas id="thunder-canvas"></canvas>
         <div class="scanline"></div>
-
         <button class="start-typing-btn glowing" id="start-typing-btn" title="Start Typing">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-            </svg>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
         </button>
-
         <button class="close-modal-btn" id="close-modal-btn">&#10005;</button>
-
         <div class="typing-modal-content">
             <div class="flex justify-center">
                 <div class="flex glass-panel rounded-xl p-1.5 shadow-lg" id="difficulty-selector">
@@ -549,24 +145,13 @@
                     <button data-level="3" class="diff-btn px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 text-[#475569] hover:text-[#F8FAFC]">A-Z + !?</button>
                 </div>
             </div>
-
             <div class="flex justify-between items-end h-14 px-2">
                 <div class="flex gap-8">
-                    <div class="flex flex-col">
-                        <span class="text-xs text-[#475569] font-bold uppercase tracking-widest mb-1">WPM</span>
-                        <span class="text-4xl font-black leading-none text-white tracking-tight" id="wpm">0</span>
-                    </div>
-                    <div class="flex flex-col">
-                        <span class="text-xs text-[#475569] font-bold uppercase tracking-widest mb-1">Accuracy</span>
-                        <span class="text-4xl font-black leading-none text-white tracking-tight"><span id="accuracy">100</span><span class="text-2xl text-[#475569]">%</span></span>
-                    </div>
-                    <div class="flex flex-col">
-                        <span class="text-xs text-[#475569] font-bold uppercase tracking-widest mb-1">Progress</span>
-                        <span class="text-4xl font-black leading-none text-white tracking-tight"><span id="progress">0</span><span class="text-2xl text-[#475569]">%</span></span>
-                    </div>
+                    <div class="flex flex-col"><span class="text-xs text-[#475569] font-bold uppercase tracking-widest mb-1">WPM</span><span class="text-4xl font-black leading-none text-white tracking-tight" id="wpm">0</span></div>
+                    <div class="flex flex-col"><span class="text-xs text-[#475569] font-bold uppercase tracking-widest mb-1">Accuracy</span><span class="text-4xl font-black leading-none text-white tracking-tight"><span id="accuracy">100</span><span class="text-2xl text-[#475569]">%</span></span></div>
+                    <div class="flex flex-col"><span class="text-xs text-[#475569] font-bold uppercase tracking-widest mb-1">Progress</span><span class="text-4xl font-black leading-none text-white tracking-tight"><span id="progress">0</span><span class="text-2xl text-[#475569]">%</span></span></div>
                 </div>
             </div>
-
             <div id="typing-container" class="relative w-full text-[1.65rem] leading-[2.2] cursor-text select-none focus:outline-none" tabindex="0">
                 <textarea id="mobile-input-target" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
                 <div id="text-display" class="flex flex-wrap pointer-events-none"></div>
@@ -577,12 +162,9 @@
                     </span>
                 </div>
             </div>
-
             <div class="flex justify-center mt-2">
                 <button id="restart-btn" class="text-[#475569] hover:text-[#06B6D4] transition-all duration-300 p-4 rounded-full hover:bg-[rgba(6,182,212,0.1)] focus:outline-none group" aria-label="Restart Drill">
-                    <svg class="w-7 h-7 transform group-hover:-rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
+                    <svg class="w-7 h-7 transform group-hover:-rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                 </button>
             </div>
         </div>
@@ -611,6 +193,7 @@
             passwordError: document.getElementById('password-error'),
             initScreen: document.getElementById('init-screen'),
             initBtn: document.getElementById('init-btn'),
+            raceBtn: document.getElementById('race-btn'),
             chatScreen: document.getElementById('chat-screen'),
             chatMessages: document.getElementById('chat-messages'),
             chatInput: document.getElementById('chat-input'),
@@ -640,12 +223,11 @@
                 .replace(/[‘’]/g, "'")
                 .replace(/[“”]/g, '"')
                 .replace(/…/g, '...')
-                .replace(/[^\x20-\x7E]/g, '')
+                .replace(/[^ -~]/g, '')
                 .replace(/\s+/g, ' ')
                 .trim();
         }
 
-        /* SETTINGS MENU */
         els.settingsBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             els.settingsDropdown.classList.toggle('hidden');
@@ -663,7 +245,6 @@
             });
         });
 
-        /* PASSWORD */
         els.passwordInput.addEventListener('input', (e) => {
             const val = e.target.value;
             els.passwordError.classList.remove('show');
@@ -682,7 +263,6 @@
             }
         });
 
-        /* INIT */
         els.initBtn.addEventListener('click', () => {
             els.initScreen.classList.add('hidden');
             setTimeout(() => {
@@ -691,35 +271,31 @@
             }, 300);
         });
 
-        /* CHATBOT */
+        els.raceBtn.addEventListener('click', () => {
+            window.location.href = 'race.html';
+        });
+
         async function sendMessage() {
             const text = els.chatInput.value.trim();
             if (!text) return;
-
             addMessage(text, 'user');
             els.chatInput.value = '';
             els.chatSend.disabled = true;
-
             const typingId = showTypingIndicator();
-
             try {
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: text, provider: state.selectedProvider })
                 });
-
                 removeTypingIndicator(typingId);
-
                 if (!response.ok) {
                     const errData = await response.json().catch(() => ({}));
                     throw new Error(errData.detail || 'Server error');
                 }
-
                 const data = await response.json();
                 const aiText = sanitizeText(data.text || "I couldn't generate a response. Try again!");
                 addMessage(aiText, 'ai');
-
             } catch (err) {
                 removeTypingIndicator(typingId);
                 addMessage("Sorry, I couldn't connect to the AI. Please try again later.", 'ai');
@@ -762,7 +338,6 @@
             if (e.key === 'Enter') sendMessage();
         });
 
-        /* DIFFICULTY */
         els.diffButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 els.diffButtons.forEach(b => {
@@ -790,11 +365,9 @@
             } else {
                 processed = processed.replace(/\s+/g, ' ').trim();
             }
-            // REMOVED the 40-word limit - now loads the FULL paragraph
             state.charArray = processed.split('');
         }
 
-        /* TYPING MODAL */
         function openTypingModal(text) {
             const cleanText = sanitizeText(text);
             state.rawText = cleanText;
@@ -804,18 +377,14 @@
             state.timerActive = false;
             state.totalKeystrokes = 0;
             state.correctKeystrokes = 0;
-            state.isTypingStarted = false;
             state.isBlocked = false;
-
             els.mobileInput.value = '';
             els.wpm.textContent = '0';
             els.accuracy.textContent = '100';
             els.progress.textContent = '0';
             els.container.scrollTop = 0;
-
             processTextForDifficulty(cleanText);
             renderTextUI();
-            // Ensure scroll is at top after render
             requestAnimationFrame(() => {
                 els.container.scrollTop = 0;
             });
@@ -835,7 +404,6 @@
             els.container.scrollTop = 0;
         });
 
-        /* TYPING ENGINE */
         function renderTextUI() {
             els.display.innerHTML = '';
             state.charArray.forEach((char, index) => {
@@ -898,13 +466,16 @@
             els.mobileInput.focus();
         });
 
-        /* SCROLL ENGINE */
+        /* SMOOTH SCROLL ENGINE */
         function getLineHeight() {
             const c0 = document.getElementById('char-0');
-            if (!c0) return 58;
+            if (!c0) {
+                const fs = parseFloat(window.getComputedStyle(els.container).fontSize) || 26.4;
+                return fs * 2.2;
+            }
             for (let i = 1; i < state.charArray.length; i++) {
                 const c = document.getElementById(`char-${i}`);
-                if (c && c.offsetTop > c0.offsetTop) {
+                if (c && c.offsetTop > c0.offsetTop + 2) {
                     return c.offsetTop - c0.offsetTop;
                 }
             }
@@ -914,41 +485,35 @@
                 const fs = parseFloat(style.fontSize);
                 return fs * 1.6;
             }
-            return parseFloat(lh);
-        }
-
-        function getCurrentLine(index) {
-            const char = document.getElementById(`char-${index}`);
-            if (!char) return 0;
-            const top = char.offsetTop;
-            let line = 0;
-            for (let i = 0; i < index; i++) {
-                const c = document.getElementById(`char-${i}`);
-                if (c && c.offsetTop < top - 2) line++;
-            }
-            return line;
+            return parseFloat(lh) || 58;
         }
 
         function autoScroll() {
             if (!state.isTypingStarted || state.charArray.length === 0) return;
-            const line = getCurrentLine(state.currentIndex);
+            const activeChar = document.getElementById(`char-${state.currentIndex}`);
+            if (!activeChar) return;
+
+            const container = els.container;
+            const charTop = activeChar.offsetTop;
+            const charHeight = activeChar.offsetHeight || 20;
+            const containerHeight = container.clientHeight;
+            const scrollTop = container.scrollTop;
             const lineHeight = getLineHeight();
-            if (line >= 2) {
-                els.container.scrollTop = (line - 1) * lineHeight;
-            } else {
-                els.container.scrollTop = 0;
+
+            const cursorBottom = charTop + charHeight;
+            const visibleBottom = scrollTop + containerHeight;
+            const visibleTop = scrollTop;
+
+            if (cursorBottom > visibleBottom - lineHeight * 0.3) {
+                const target = charTop - lineHeight * 2;
+                container.scrollTop = Math.max(0, target);
+            }
+            else if (charTop < visibleTop + lineHeight * 0.3) {
+                const target = charTop - lineHeight * 0.5;
+                container.scrollTop = Math.max(0, target);
             }
         }
 
-        function preventManualScroll(e) {
-            if (state.isTypingStarted && state.currentIndex < state.charArray.length) {
-                e.preventDefault();
-            }
-        }
-        els.container.addEventListener('wheel', preventManualScroll, { passive: false });
-        els.container.addEventListener('touchmove', preventManualScroll, { passive: false });
-
-        /* KEY HANDLER */
         els.mobileInput.addEventListener('input', handleTypingInput);
 
         window.addEventListener('keydown', function(e) {
@@ -1208,7 +773,6 @@
                 this.dir = (type === 'correct') ? 1 : -1;
                 this.totalLen = charW;
                 this.decay = 0.055 + Math.random() * 0.03;
-
                 if (type === 'correct') {
                     this.colTip  = '#e0f7ff';
                     this.colMid  = '#4dcfff';
@@ -1222,7 +786,6 @@
                 }
                 this.buildPath();
             }
-
             buildPath() {
                 const segs = Math.max(3, Math.round(this.totalLen / 3));
                 const segLen = this.totalLen / segs;
@@ -1249,7 +812,6 @@
                     }
                 }
             }
-
             strokePath(pts, offX, offY, color, width, blur, alpha) {
                 if (pts.length < 2) return;
                 ctx.save();
@@ -1267,15 +829,12 @@
                 ctx.stroke();
                 ctx.restore();
             }
-
             drawPoly(pts, ox, oy, a) {
                 this.strokePath(pts, ox, oy, this.colGlow, this.w + 5, 28, a * 0.28);
                 this.strokePath(pts, ox, oy, this.colMid, this.w, 12, a * 0.9);
                 this.strokePath(pts, ox, oy, this.colTip, this.w * 0.3, 4, a);
             }
-
             update() { this.life -= this.decay; }
-
             draw() {
                 const a = Math.max(0, this.life);
                 this.drawPoly(this.pts, this.startX, this.y, a);
